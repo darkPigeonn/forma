@@ -1,0 +1,18 @@
+---
+description: Forma architecture and layering rules — always apply
+alwaysApply: true
+---
+
+# Forma architecture rules
+
+- Product docs: `docs/SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`, `docs/TASKS.md`. Prefer MVP scope; do not build out-of-scope features unless asked.
+- Stack: Next.js App Router, TypeScript, MongoDB + Mongoose, Firebase Auth, Zod, Tailwind, React Hook Form.
+- Layers: UI → server actions/API → `src/domain` → `src/db`. Never query the DB from client components.
+- Auth: Firebase Auth on client; Firebase Admin verifies ID token or session cookie on server. Never trust client-only auth for mutations. `form.ownerId` = Firebase UID. MongoDB `users` is a profile mirror (`firebaseUid`) — no passwords in Mongo.
+- Data model: embed `questions[]` on Form; embed `answers[]` on Response. Index `users.firebaseUid`, `forms.slug`, `forms.ownerId`, `responses.formId`.
+- Validate all inputs with Zod on the server; reuse schemas from `src/lib/validators`. Mongoose enforces persistence shape.
+- Authorization: every private form/response read or write must check `form.ownerId === firebaseUid`. Public routes only for `published` forms; closed forms reject new submits. Respondents need no auth (MVP).
+- Use singleton Mongoose + Firebase Admin helpers for Next.js. Keep `MONGODB_URI` and Firebase Admin credentials server-only; only public Firebase web config on the client.
+- IDs: MongoDB ObjectId for documents; cuid/ulid for embedded `question.id`. Public forms use `slug` in URLs.
+- UI/UX: follow `docs/DESIGN.md` tokens (teal accent, paper bg, Fraunces + Source Sans 3). No purple gradients, no placeholder-only labels, WCAG-minded public forms.
+- Keep changes scoped to the current phase in `docs/TASKS.md`. Do not add drive-by refactors or unsolicited markdown files beyond changelog updates.

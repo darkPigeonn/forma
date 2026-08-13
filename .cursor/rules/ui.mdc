@@ -1,0 +1,15 @@
+---
+description: Forma UI and accessibility conventions for React components
+globs: "**/*.{tsx,css}"
+alwaysApply: false
+---
+
+# Forma UI rules
+
+- Use CSS variables from the design system (`--color-accent`, `--color-bg`, etc.); do not invent one-off brand colors.
+- Public form fields: visible `<label>`, errors via `aria-describedby`, `aria-invalid` when wrong, required via `aria-required` or equivalent.
+- Prefer native inputs/selects; custom controls need full keyboard support.
+- Tap targets ≥ 44px on mobile for primary actions.
+- Cards only when wrapping an interactive unit (e.g. question editor). Avoid decorative card grids on dashboards.
+- Motion: only autosave feedback, question add/remove, submit→success — keep under ~200ms, no decorative animation noise.
+- Dashboard = list/table first; builder = question list + preview; public form = single column.
