@@ -12,4 +12,4 @@ alwaysApply: false
 - Tap targets ≥ 44px on mobile for primary actions.
 - Cards only when wrapping an interactive unit (e.g. question editor). Avoid decorative card grids on dashboards.
 - Motion: only autosave feedback, question add/remove, submit→success — keep under ~200ms, no decorative animation noise.
-- Dashboard = list/table first; builder = question list + preview; public form = single column.
+- Dashboard = list/table first; builder = centered form canvas; public form = single column.

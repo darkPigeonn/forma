@@ -3,6 +3,7 @@ import type { QuestionInput } from "@/lib/validators/question";
 import { ui } from "@/lib/ui-id";
 import { isFileAnswerValue } from "@/lib/storage/form-uploads";
 import { fileAnswerSchema } from "@/lib/validators/response";
+import { normalizeRangeValue } from "@/lib/range-question";
 
 export type FileAnswerValue = {
   name: string;
@@ -38,8 +39,25 @@ function choiceIds(question: QuestionInput): Set<string> {
   return new Set((question.options?.choices ?? []).map((c) => c.id));
 }
 
+/** Expected storage path for a file uploaded to this form question. */
+export function expectedFormUploadPathPrefix(
+  formId: string,
+  questionId: string,
+): string {
+  return `form-uploads/${formId}/${questionId}/`;
+}
+
+export function isValidFormUploadPath(
+  path: string,
+  formId: string,
+  questionId: string,
+): boolean {
+  return path.startsWith(expectedFormUploadPathPrefix(formId, questionId));
+}
+
 /** Validate submitted answers against the live question schema */
 export function validateAnswersAgainstQuestions(
+  formId: string,
   questions: QuestionInput[],
   answers: AnswerInput[],
 ): { ok: true; answers: AnswerInput[] } | { ok: false; errors: FieldError[] } {
@@ -118,6 +136,18 @@ export function validateAnswersAgainstQuestions(
         normalized.push({ questionId: question.id, value: num });
         break;
       }
+      case "range": {
+        const num = normalizeRangeValue(question, value);
+        if (num === null) {
+          errors.push({
+            questionId: question.id,
+            message: ui.validRangeValue,
+          });
+          break;
+        }
+        normalized.push({ questionId: question.id, value: num });
+        break;
+      }
       case "multiple_choice":
       case "dropdown": {
         if (typeof value !== "string" || !choiceIds(question).has(value)) {
@@ -158,7 +188,7 @@ export function validateAnswersAgainstQuestions(
           });
           break;
         }
-        if (!parsed.data.path.startsWith(`form-uploads/`)) {
+        if (!isValidFormUploadPath(parsed.data.path, formId, question.id)) {
           errors.push({
             questionId: question.id,
             message: ui.invalidFileAnswer,

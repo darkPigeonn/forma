@@ -23,7 +23,7 @@ function mapAuthError(code: string | undefined) {
   }
 }
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
   const router = useRouter();
   const emailId = useId();
   const passwordId = useId();
@@ -55,7 +55,7 @@ export function LoginForm() {
       if (!res.ok) {
         throw new Error("session");
       }
-      router.replace("/dashboard");
+      router.replace(redirectTo);
       router.refresh();
     } catch (err) {
       const code =
@@ -72,6 +72,7 @@ export function LoginForm() {
     <div className="flex w-full flex-col gap-4">
       <GoogleSignInButton
         disabled={pending}
+        redirectTo={redirectTo}
         onError={(message) => setError(message || null)}
       />
 

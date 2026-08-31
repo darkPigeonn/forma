@@ -8,13 +8,29 @@ import {
   formatAnswerDisplay,
   type ChoiceQuestionSummary,
 } from "@/domain/responses";
-import { getOwnedForm } from "@/db/queries/forms";
+import { getEditableForm } from "@/db/queries/form-access";
 import type { QuestionInput } from "@/lib/validators/question";
 import type { FormDocument } from "@/db/models/form";
+import { fromPersistedQuestionOptions } from "@/lib/question-options";
+import {
+  buildAttendanceRows,
+  type AttendanceRow,
+} from "@/domain/attendance";
+import { attachRespondentLabels } from "@/domain/respondent-label";
+import {
+  buildResponseAnalytics,
+  type ResponseAnalytics,
+  type ResponseSubmission,
+} from "@/domain/response-analytics";
 import { ui } from "@/lib/ui-id";
+import {
+  isFileAnswerValue,
+  resolveFileAnswerUrl,
+} from "@/lib/storage/form-uploads";
 export type ResponseListItem = {
   id: string;
   submittedAt: string;
+  respondentLabel: string;
   preview: string;
 };
 
@@ -36,6 +52,9 @@ export type FormResponsesBundle = {
   total: number;
   items: ResponseListItem[];
   summaries: ChoiceQuestionSummary[];
+  analytics: ResponseAnalytics;
+  submissions: ResponseSubmission[];
+  attendance: AttendanceRow[];
 };
 
 type LeanAnswer = {
@@ -93,6 +112,7 @@ function serializeFormQuestions(
         helpText?: string | null;
         required?: boolean | null;
         order?: number | null;
+        sectionId?: string | null;
         options?: { choices?: { id: string; label: string }[] } | null;
       },
       index: number,
@@ -104,18 +124,39 @@ function serializeFormQuestions(
         helpText: q.helpText ?? "",
         required: Boolean(q.required),
         order: typeof q.order === "number" ? q.order : index,
+        sectionId: q.sectionId || "default",
       };
-      if (q.options?.choices?.length) {
-        base.options = {
-          choices: q.options.choices.map((c: { id: string; label: string }) => ({
-            id: c.id,
-            label: c.label,
-          })),
-        };
+      const options = fromPersistedQuestionOptions(q.options);
+      if (options) {
+        base.options = options;
       }
       return base;
     },
   );
+}
+
+export async function hasResponseForRespondent(
+  formId: string,
+  respondentKey: string,
+) {
+  await connectDb();
+  const found = await Response.exists({
+    formId: new Types.ObjectId(formId),
+    "meta.respondentKey": respondentKey,
+  });
+  return Boolean(found);
+}
+
+export async function hasResponseForUniqueKey(
+  formId: string,
+  uniqueKey: string,
+) {
+  await connectDb();
+  const found = await Response.exists({
+    formId: new Types.ObjectId(formId),
+    "meta.uniqueKey": uniqueKey,
+  });
+  return Boolean(found);
 }
 
 export async function createFormResponse(input: {
@@ -123,25 +164,37 @@ export async function createFormResponse(input: {
   answers: AnswerInput[];
   userAgent?: string;
   ipHash?: string;
-}) {
+  respondentKey?: string;
+  uniqueKey?: string;
+}): Promise<{ id: string; submittedAt: string }> {
   await connectDb();
 
-  return Response.create({
+  const doc = await Response.create({
     formId: new Types.ObjectId(input.formId),
     submittedAt: new Date(),
     meta: {
       userAgent: input.userAgent?.slice(0, 500),
       ipHash: input.ipHash,
+      respondentKey: input.respondentKey,
+      uniqueKey: input.uniqueKey,
     },
     answers: input.answers.map((a) => ({
       questionId: a.questionId,
       value: a.value,
     })),
   });
+  return {
+    id: String(doc._id),
+    submittedAt: new Date(doc.submittedAt).toISOString(),
+  };
 }
 
-async function loadOwnedResponses(formId: string, ownerId: string) {
-  const form = await getOwnedForm(formId, ownerId);
+async function loadAccessibleResponses(
+  formId: string,
+  userId: string,
+  email: string,
+) {
+  const form = await getEditableForm(formId, userId, email);
   if (!form) return null;
 
   await connectDb();
@@ -156,25 +209,29 @@ function questionMap(questions: QuestionInput[]) {
   return new Map(questions.map((q) => [q.id, q]));
 }
 
-export async function getOwnedFormResponsesBundle(
+export async function getAccessibleFormResponsesBundle(
   formId: string,
-  ownerId: string,
+  userId: string,
+  email: string,
 ): Promise<FormResponsesBundle | null> {
-  const loaded = await loadOwnedResponses(formId, ownerId);
+  const loaded = await loadAccessibleResponses(formId, userId, email);
   if (!loaded) return null;
 
   const { form, docs } = loaded;
   const questions = serializeFormQuestions(form.questions);
   const qMap = questionMap(questions);
 
-  const serialized = docs.map((doc) => ({
-    id: String(doc._id),
-    submittedAt: new Date(doc.submittedAt).toISOString(),
-    answers: (doc.answers ?? []).map((a) => ({
-      questionId: a.questionId,
-      value: asAnswerValue(a.value),
+  const serialized = attachRespondentLabels(
+    questions,
+    docs.map((doc) => ({
+      id: String(doc._id),
+      submittedAt: new Date(doc.submittedAt).toISOString(),
+      answers: (doc.answers ?? []).map((a) => ({
+        questionId: a.questionId,
+        value: asAnswerValue(a.value),
+      })),
     })),
-  }));
+  );
 
   const items: ResponseListItem[] = serialized.map((response) => {
     const firstAnswer = response.answers.find((a) => {
@@ -192,6 +249,7 @@ export async function getOwnedFormResponsesBundle(
     return {
       id: response.id,
       submittedAt: response.submittedAt,
+      respondentLabel: response.respondentLabel,
       preview: preview.slice(0, 120),
     };
   });
@@ -200,17 +258,29 @@ export async function getOwnedFormResponsesBundle(
     total: serialized.length,
     items,
     summaries: buildChoiceSummaries(questions, serialized),
+    analytics: buildResponseAnalytics(questions, serialized),
+    submissions: serialized,
+    attendance: buildAttendanceRows(questions, serialized),
   };
 }
 
-export async function getOwnedResponseDetail(
+/** @deprecated Use getAccessibleFormResponsesBundle */
+export async function getOwnedFormResponsesBundle(
+  formId: string,
+  ownerId: string,
+): Promise<FormResponsesBundle | null> {
+  return getAccessibleFormResponsesBundle(formId, ownerId, "");
+}
+
+export async function getAccessibleResponseDetail(
   formId: string,
   responseId: string,
-  ownerId: string,
+  userId: string,
+  email: string,
 ): Promise<ResponseDetail | null> {
   if (!Types.ObjectId.isValid(responseId)) return null;
 
-  const form = await getOwnedForm(formId, ownerId);
+  const form = await getEditableForm(formId, userId, email);
   if (!form) return null;
 
   await connectDb();
@@ -226,21 +296,27 @@ export async function getOwnedResponseDetail(
     (doc.answers ?? []).map((a) => [a.questionId, asAnswerValue(a.value)]),
   );
 
-  const ordered: ResponseAnswerView[] = [...questions]
-    .sort((a, b) => a.order - b.order)
-    .map((q) => {
-      const value = answerById.get(q.id) ?? null;
-      return {
-        questionId: q.id,
-        label: q.label,
-        type: q.type,
-        value,
-        displayValue: formatAnswerDisplay(q, value),
-      };
+  const ordered: ResponseAnswerView[] = [];
+  for (const q of [...questions].sort((a, b) => a.order - b.order)) {
+    let value = answerById.get(q.id) ?? null;
+    if (value && isFileAnswerValue(value)) {
+      value = await resolveFileAnswerUrl(value);
+    }
+    ordered.push({
+      questionId: q.id,
+      label: q.label,
+      type: q.type,
+      value,
+      displayValue: formatAnswerDisplay(q, value),
     });
+  }
 
-  for (const [questionId, value] of answerById) {
+  for (const [questionId, rawValue] of answerById) {
     if (qMap.has(questionId)) continue;
+    let value = rawValue;
+    if (value && isFileAnswerValue(value)) {
+      value = await resolveFileAnswerUrl(value);
+    }
     ordered.push({
       questionId,
       label: ui.deletedQuestion,
@@ -257,11 +333,21 @@ export async function getOwnedResponseDetail(
   };
 }
 
-export async function getOwnedResponsesCsv(
+/** @deprecated Use getAccessibleResponseDetail */
+export async function getOwnedResponseDetail(
   formId: string,
+  responseId: string,
   ownerId: string,
+): Promise<ResponseDetail | null> {
+  return getAccessibleResponseDetail(formId, responseId, ownerId, "");
+}
+
+export async function getAccessibleResponsesCsv(
+  formId: string,
+  userId: string,
+  email: string,
 ): Promise<{ filename: string; csv: string } | null> {
-  const loaded = await loadOwnedResponses(formId, ownerId);
+  const loaded = await loadAccessibleResponses(formId, userId, email);
   if (!loaded) return null;
 
   const { form, docs } = loaded;
@@ -286,4 +372,12 @@ export async function getOwnedResponsesCsv(
     filename: `${safeTitle}-responses.csv`,
     csv: buildResponsesCsv(questions, responses),
   };
+}
+
+/** @deprecated Use getAccessibleResponsesCsv */
+export async function getOwnedResponsesCsv(
+  formId: string,
+  ownerId: string,
+): Promise<{ filename: string; csv: string } | null> {
+  return getAccessibleResponsesCsv(formId, ownerId, "");
 }

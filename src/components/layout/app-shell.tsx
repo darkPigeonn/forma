@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { ui } from "@/lib/ui-id";
 
 type AppShellProps = {
@@ -11,15 +12,10 @@ type AppShellProps = {
 export function AppShell({ userName, userEmail, children }: AppShellProps) {
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-border bg-bg-elevated/80 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
+      <header className="border-b border-border bg-bg-elevated/80 backdrop-blur-sm print:hidden">
+        <div className="page-container flex items-center justify-between gap-4 py-4">
           <div className="flex min-w-0 items-center gap-6">
-            <Link
-              href="/dashboard"
-              className="font-[family-name:var(--font-fraunces)] text-xl font-semibold text-ink"
-            >
-              {ui.brand}
-            </Link>
+            <BrandLogo href="/dashboard" size="sm" />
             <nav aria-label={ui.mainNav}>
               <Link
                 href="/dashboard"
@@ -40,7 +36,7 @@ export function AppShell({ userName, userEmail, children }: AppShellProps) {
           </div>
         </div>
       </header>
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</div>
+      <main className="page-container flex-1 py-8">{children}</main>
     </div>
   );
 }

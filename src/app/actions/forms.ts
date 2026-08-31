@@ -12,6 +12,7 @@ import {
 } from "@/lib/validators/form";
 import {
   createFormForOwner,
+  createFormFromTemplateForOwner,
   deleteOwnedForm,
   duplicateOwnedForm,
   renameOwnedForm,
@@ -58,6 +59,28 @@ export async function createFormAction(rawTitle?: string) {
   redirect(`/forms/${form.id}`);
 }
 
+export async function createFormFromTemplateAction(templateId: string) {
+  const user = await requireOwner();
+  if (!user) {
+    return { ok: false as const, error: ui.signInRequired };
+  }
+
+  const parsed = createFormSchema.safeParse({ templateId });
+  if (!parsed.success || !parsed.data.templateId) {
+    return { ok: false as const, error: ui.invalidRequest };
+  }
+
+  const form = await createFormFromTemplateForOwner(
+    user.uid,
+    parsed.data.templateId,
+  );
+  if (!form) {
+    return { ok: false as const, error: ui.invalidRequest };
+  }
+  revalidatePath("/dashboard");
+  redirect(`/forms/${form.id}`);
+}
+
 export async function renameFormAction(
   input: unknown,
 ): Promise<ActionResult> {
@@ -72,6 +95,7 @@ export async function renameFormAction(
   const form = await renameOwnedForm(
     parsed.data.formId,
     user.uid,
+    user.email,
     parsed.data.title,
   );
   if (!form) return { ok: false, error: "Form not found" };
@@ -93,11 +117,14 @@ export async function updateFormMetaAction(
   }
 
   const { formId, ...patch } = parsed.data;
-  const form = await updateOwnedFormMeta(formId, user.uid, patch);
+  const form = await updateOwnedFormMeta(formId, user.uid, user.email, patch);
   if (!form) return { ok: false, error: "Form not found" };
 
   revalidatePath("/dashboard");
   revalidatePath(`/forms/${form.id}`);
+  if (form.publicPath) {
+    revalidatePath(form.publicPath);
+  }
   return { ok: true };
 }
 
@@ -151,6 +178,7 @@ export async function setFormStatusAction(
   const result = await setOwnedFormStatus(
     parsed.data.formId,
     user.uid,
+    user.email,
     parsed.data.status,
   );
 
@@ -180,7 +208,9 @@ export async function saveFormQuestionsAction(
   const form = await saveOwnedFormQuestions(
     parsed.data.formId,
     user.uid,
+    user.email,
     parsed.data.questions,
+    parsed.data.sections,
   );
   if (!form) return { ok: false, error: "Form not found" };
 

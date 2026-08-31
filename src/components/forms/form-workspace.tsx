@@ -3,29 +3,39 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { FormBuilder } from "@/components/form-builder/form-builder";
 import { FormActionBar } from "@/components/forms/form-action-bar";
+import { FormPreviewPanel } from "@/components/forms/form-preview-panel";
 import { FormSettingsPanel } from "@/components/forms/form-settings-panel";
-import { FormTitleEditor } from "@/components/forms/form-title-editor";
 import { ResponsesPanel } from "@/components/responses/responses-panel";
 import type { FormDetail } from "@/db/queries/forms";
 import type { FormResponsesBundle } from "@/db/queries/responses";
+import type { QuestionInput, SectionInput } from "@/lib/validators/question";
 import { ui } from "@/lib/ui-id";
 
 type FormWorkspaceProps = {
   form: FormDetail;
   responses: FormResponsesBundle;
+  siteOrigin: string;
 };
 
-type Tab = "questions" | "responses" | "settings";
+type Tab = "questions" | "preview" | "responses" | "settings";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "questions", label: ui.tabQuestions },
+  { id: "preview", label: ui.tabPreview },
   { id: "responses", label: ui.tabResponses },
   { id: "settings", label: ui.tabSettings },
 ];
 
-export function FormWorkspace({ form, responses }: FormWorkspaceProps) {
+export function FormWorkspace({ form, responses, siteOrigin }: FormWorkspaceProps) {
   const [tab, setTab] = useState<Tab>("questions");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [draft, setDraft] = useState<{
+    questions: QuestionInput[];
+    sections: SectionInput[];
+  }>(() => ({
+    questions: form.questions,
+    sections: form.sections,
+  }));
 
   const tabs = TABS.map((item) =>
     item.id === "responses" && responses.total > 0
@@ -57,19 +67,13 @@ export function FormWorkspace({ form, responses }: FormWorkspaceProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <FormActionBar form={form} />
-
-      <FormTitleEditor
-        formId={form.id}
-        title={form.title}
-        description={form.description}
-      />
+    <div className="-mt-8 space-y-4">
+      <FormActionBar form={form} siteOrigin={siteOrigin} />
 
       <div
         role="tablist"
         aria-label={ui.formSections}
-        className="flex flex-wrap gap-1 border-b border-border"
+        className="flex flex-wrap justify-center gap-1 border-b border-border print:hidden"
         onKeyDown={onTabKeyDown}
       >
         {tabs.map((item, index) => {
@@ -105,12 +109,30 @@ export function FormWorkspace({ form, responses }: FormWorkspaceProps) {
         aria-labelledby="tab-questions"
         hidden={tab !== "questions"}
       >
-        {tab === "questions" ? (
-          <FormBuilder
-            formId={form.id}
+        <FormBuilder
+          formId={form.id}
+          title={form.title}
+          description={form.description}
+          initialQuestions={form.questions}
+          initialSections={form.sections}
+          onStructureChange={setDraft}
+        />
+      </div>
+
+      <div
+        role="tabpanel"
+        id="panel-preview"
+        aria-labelledby="tab-preview"
+        hidden={tab !== "preview"}
+      >
+        {tab === "preview" ? (
+          <FormPreviewPanel
             title={form.title}
             description={form.description}
-            initialQuestions={form.questions}
+            questions={draft.questions}
+            sections={draft.sections}
+            themeId={form.themeId}
+            headerImage={form.headerImage}
           />
         ) : null}
       </div>
@@ -122,7 +144,7 @@ export function FormWorkspace({ form, responses }: FormWorkspaceProps) {
         hidden={tab !== "responses"}
       >
         {tab === "responses" ? (
-          <ResponsesPanel formId={form.id} bundle={responses} />
+          <ResponsesPanel form={form} bundle={responses} />
         ) : null}
       </div>
 

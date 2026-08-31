@@ -1,7 +1,7 @@
 "use server";
 
 import { requireSessionUser } from "@/lib/firebase/auth";
-import { getOwnedResponseDetail } from "@/db/queries/responses";
+import { getAccessibleResponseDetail } from "@/db/queries/responses";
 import { ui } from "@/lib/ui-id";
 import { z } from "zod";
 
@@ -23,10 +23,11 @@ export async function getResponseDetailAction(input: unknown) {
     return { ok: false as const, error: ui.invalidRequest };
   }
 
-  const detail = await getOwnedResponseDetail(
+  const detail = await getAccessibleResponseDetail(
     parsed.data.formId,
     parsed.data.responseId,
     user.uid,
+    user.email,
   );
 
   if (!detail) {

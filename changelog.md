@@ -1,5 +1,224 @@
 # Changelog
 
+## 2026-08-31 — Integration & E2E tests
+
+- Integration tests untuk `POST /api/f/[slug]/submit` (mock DB): 404, 403 closed, validasi, unique conflict, sukses + cookie.
+- Playwright E2E: smoke (landing, login, 404) + submit form publik (fixture MongoDB via `e2e/global-setup.ts`).
+- Scripts: `npm run test:e2e`, `npm run test:all`.
+- E2E menjalankan `next build && next start` di port **3100** (tidak bentrok dengan `npm run dev` di :3000).
+
+## 2026-08-31 — Automated tests (Vitest)
+
+- Vitest + `npm test` untuk critical path domain/lib.
+- Coverage: validasi jawaban (termasuk file upload path), unique key HP/email, rate limit in-memory.
+
+## 2026-08-31 — Distributed rate limiting (Upstash Redis)
+
+- Public submit/upload memakai **Upstash Redis** saat `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` diset — limit konsisten di semua instance.
+- Tanpa Upstash, fallback in-memory per proses (dev lokal).
+- Sliding window via `@upstash/ratelimit`; gagal Redis → fail-open (request tetap diproses, error di-log).
+
+## 2026-08-31 — Production hardening (audit follow-up)
+
+- **Keamanan file upload:** validasi path jawaban file harus cocok dengan `form-uploads/{formId}/{questionId}/` — mencegah lampiran file dari form lain.
+- **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, dan HSTS (production only) di `next.config.ts`.
+- **Logout:** revoke Firebase refresh tokens saat sign out agar session cookie tidak bisa dipakai ulang.
+- **Node:** `engines.node >= 20.9.0` di `package.json`; `NEXT_PUBLIC_SITE_URL` didokumentasikan di `.env.example`.
+- **ESLint:** perbaikan 9 error (setState-in-effect, prefer-const, immutability) — `npm run lint` bersih.
+
+## 2026-08-31 — Bagikan QR & kolaborator disembunyikan
+
+- Menu **Bagikan**: opsi **Tampilkan QR** (dialog pratinjau) dan **Unduh QR** (PNG).
+- QR dioptimalkan untuk pemindaian: kontras hitam-putih, quiet zone 4 modul, koreksi error tinggi, pratinjau retina, unduhan 1200px untuk cetak.
+- Fitur kolaborator disembunyikan sementara (`featureFlags.collaborators = false`); kode backend tetap ada.
+
+## 2026-08-31 — Kolaborasi formulir (undang lewat email)
+
+- Pemilik formulir dapat mengundang kolaborator lewat email (tab **Pengaturan → Kolaborator**).
+- Peran **editor**: mengedit formulir, melihat/mengekspor respons; tidak bisa hapus/duplikat formulir atau mengelola kolaborator.
+- Undangan dikirim via Resend (`RESEND_API_KEY`, `EMAIL_FROM`); tautan `/invite/{token}` tetap bisa disalin manual.
+- Dasbor menampilkan formulir milik sendiri + yang dibagikan; badge **Dibagikan** untuk formulir kolaborasi.
+- Undangan pending otomatis aktif saat pengguna masuk dengan email yang sesuai.
+
+## 2026-08-31 — Seed survei lingkungan (tipe range)
+
+- Skrip `seed-lingkungan-survey.ts`: Q1 skala 1–10 memakai tipe **range** (nilai numerik, bukan ID pilihan ganda).
+- Opsi `SEED_RESPONSES_ONLY=1` untuk mengganti jawaban saja tanpa mengubah struktur formulir yang sudah diedit.
+
+## 2026-08-31 — Panel putih per section di builder
+
+- Tab **Pertanyaan**: setiap halaman/section formulir dibungkus panel putih (`forma-section`); pemisah antar-section tetap di luar panel.
+
+## 2026-08-31 — Logo transparan & favicon
+
+- Logo UI memakai `public/logo.png` (background putih dihapus dari `logo.jpeg`).
+- Favicon/tab browser diganti dari ikon default Next.js ke `favicon.ico` + `icon.png` yang dihasilkan dari logo yang sama (`npm run generate:icons`).
+
+## 2026-08-31 — Logo Forma
+
+- Memasang `public/logo.jpeg` di header aplikasi, landing, login/signup, halaman formulir publik, dan favicon.
+- Komponen `BrandLogo` untuk ukuran dan penempatan konsisten.
+
+## 2026-08-31 — Aksi formulir di top bar
+
+- Semua aksi formulir (kembali, status, salin/buka tautan, bagikan, terbitkan/tutup, duplikat, hapus) dipusatkan di satu top bar sticky.
+- Menu **Bagikan** dan **Aksi lainnya** memakai dropdown agar tidak memenuhi layar.
+- Blok duplikat/hapus di tab Pengaturan dihapus (sudah ada di top bar).
+
+## 2026-08-31 — Section panel latar putih
+
+- Utility `forma-section` untuk kartu/panel berborder putih (`bg-bg-elevated`).
+- Tab Pengaturan: setiap blok (tema, header, konfirmasi, batas respons, aksi) memakai panel putih.
+- Dashboard, login/signup, respons, builder, dan analisa: kontainer section yang sebelumnya abu (`bg-bg`) diseragamkan ke putih.
+
+## 2026-08-31 — Kompresi gambar otomatis
+
+- Gambar header formulir dan jawaban `file_upload` (format gambar) dikompres di server sebelum disimpan (resize + JPEG/WebP via `sharp`).
+- Header: maks. 1920×1080, kualitas ~82%; unggahan responden: maks. 2048×2048, kualitas ~85%.
+- GIF animasi tidak diubah; jika hasil kompresi lebih besar dari asli, file asli tetap dipakai.
+
+## 2026-08-31 — Penyimpanan AWS S3 (selaras simk-garum)
+
+- Upload file & gambar header ke S3 **privat** (tanpa ACL publik); akses baca lewat signed URL.
+- Env vars utama: `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET` (alias `AWS_S3_*` / `S3_*` tetap didukung).
+- Opsional `AWS_S3_PREFIX` untuk prefix key (mis. `survei_keuskupan/form-headers/...`).
+- Referensi file di DB memakai format `s3://bucket/key`; URL ditandatangani ulang saat halaman/form respons dibaca.
+- Validasi jawaban file menerima URL `s3://`; tautan unduh di detail respons memakai signed URL segar.
+
+## 2026-08-31 — Gambar header formulir
+
+- Di tab **Pengaturan**, pemilik formulir dapat mengunggah atau menghapus gambar header (JPG/PNG/GIF/WebP, maks. 5 MB).
+- Gambar ditampilkan di halaman isi publik dan pratinjau; tanpa gambar, fallback ke garis warna tema.
+- Penyimpanan file: dukungan **AWS S3** (env `S3_REGION`, `S3_BUCKET`, kredensial IAM); opsional CloudFront via `S3_PUBLIC_BASE_URL`. Tanpa S3, fallback Firebase Storage.
+
+## 2026-08-31 — Kartu pertanyaan di halaman formulir
+
+- Setiap pertanyaan di halaman isi publik dan pratinjau ditampilkan sebagai kartu dengan latar putih (`bg-bg-elevated`), border halus, dan padding nyaman.
+- Lebar konten formulir publik & pratinjau diperbesar (`max-w-xl` → `48rem`, selaras dengan builder).
+- Skala tipografi distandarkan (`form-fill-typography.ts`): judul, label pertanyaan, input, dan opsi memakai `text-base` (16px); teks bantu/meta `text-sm`.
+
+## 2026-08-31 — Tipe pertanyaan Rentang
+
+- Menambah opsi tipe pertanyaan **Rentang** di builder: atur minimum/maksimum (mis. 1–10) dan label ujung opsional.
+- Responden memilih nilai lewat tombol radio horizontal; validasi server & klien memastikan nilai dalam rentang.
+- Analisa respons menampilkan grafik batang distribusi (sama seperti skala rating).
+- Perbaikan: model Mongoose di dev di-register ulang agar enum tipe `range` dikenali setelah perubahan schema.
+
+## 2026-08-31 — Daftar respons per responden
+
+- Kolom waktu diganti **Responden** (nama/HP/email dari formulir, atau "Responden 1", "Responden 2", …); daftar diurutkan menurut nama responden.
+
+## 2026-08-31 — Analisa per pertanyaan
+
+- Tab **Analisa & wawasan** menampilkan satu kartu per pertanyaan (urut seperti formulir); filter rentang tanggal dan KPI agregat dihapus.
+- Progress bar rating di bawah grafik batang skala dihapus.
+
+## 2026-08-31 — Daftar respons per pertanyaan & per individu
+
+- Sub-tab **Daftar respons**: **Per pertanyaan** (jawaban dikelompokkan per pertanyaan, dengan paginasi) dan **Per individu** (daftar respons per orang).
+
+## 2026-08-31 — Tab daftar hadir dihapus
+
+- Menghapus sub-tab **Daftar hadir** dari panel Respons (tetap ada **Analisa & wawasan** dan **Daftar respons**).
+
+## 2026-08-31 — Dashboard analisa survei
+
+- Redesain tab **Analisa & wawasan**: header formulir + filter tanggal, KPI (total, penyelesaian, CSAT), grafik batang & skala rating, donut untuk pilihan ganda, sentimen kata kunci + word cloud untuk jawaban terbuka, ekspor CSV/PDF (cetak), dan bagikan laporan.
+
+## 2026-08-31 — Halaman analisa respons
+
+- Tab **Analisa** di panel Respons: ringkasan survei (total, periode, skor rata-rata), distribusi skala 1–10, dan sampel jawaban terbuka.
+- **Daftar respons** dan **Daftar hadir** dipindah ke sub-tab terpisah.
+
+## 2026-08-31 — Fix WhatsApp share hydration mismatch
+
+- Resolved React hydration error on the form editor: `publicFormUrl` now receives a server-derived `siteOrigin` so WhatsApp share links match between SSR and client.
+
+## 2026-08-31 — Seed survei partisipasi lingkungan
+
+- Added `scripts/seed-lingkungan-survey.ts` (`npm run seed:lingkungan`) to create **Survei Partisipasi Lingkungan** for Atanasius Ivannoel with 4 questions (skala 1–10, alasan, harapan lingkungan, harapan Gereja Roh Kudus) and 757 random responses for analytics testing.
+
+## 2026-08-31 — Firebase Auth IndexedDB fix
+
+- Upgraded `firebase` from 12.17.1 to 12.18.0 to fix a known regression where Auth’s IndexedDB persistence threw `Database is closing/hidden` on tab visibility changes (e.g. Google sign-in popup, dev HMR).
+
+## 2026-08-19 — v1.2.0 slices A–D
+
+- WhatsApp share from the form bar: open WA, copy caption, download a share card image.
+- Unique response by HP or email (Pengaturan); duplicates rejected on submit.
+- Dashboard templates: pendaftaran acara, pendataan singkat, umpan balik; Responses tab has daftar hadir (printable).
+- Public success screen includes a bukti kirim (code, time, copy/print).
+
+## 2026-08-19 — Plan v1.2.0
+
+- Documented differentiation release: WhatsApp share, unique HP/email, acara templates + daftar hadir, bukti kirim (stretch: response status).
+- Plan: `docs/V1.2.0.md`; backlog checkboxes in `docs/TASKS.md`. Not started until “Start v1.2.0”.
+
+## 2026-08-19 — Post-login onboarding
+
+- First visit to the dashboard opens a 5-step guide (create, questions/sections, theme & limits, publish & responses).
+- Skip or finish marks the tour done; “Lihat panduan” on the dashboard opens it again.
+
+## 2026-08-19 — Limit to one response per browser
+
+- Pengaturan: “Batasi 1 respons per orang” so the same browser cannot submit twice.
+- Enforced with an HTTP-only cookie and a stored respondent key; returning visitors see “Anda sudah mengirim respons”.
+- Clearing cookies / using another device can still submit again (no respondent login).
+
+## 2026-08-19 — Form theme presets
+
+- Pengaturan includes a form theme picker (teal, forest, ocean, sunset, grape, slate, paper).
+- Chosen colors apply to the public fill page and the Pratinjau tab (header bar, background, accent).
+
+## 2026-08-19 — App shell uses a page container
+
+- Dashboard and form editor share a centered `.page-container` (max 72rem) for header and main.
+- Removed the full-width form editor layout so the canvas lines up with the rest of the app.
+
+## 2026-08-19 — Paged preview for multi-section forms
+
+- Pratinjau shows one bagian at a time, with Kembali / Selanjutnya (and Kirim on the last page).
+- Submit in preview does not send a response.
+
+## 2026-08-19 — Clearer section layout in the builder
+
+- Form title and description stay at the top of the canvas.
+- Each bagian sits with its own questions; extra pages start after a “Halaman berikutnya” break.
+- Section cards are labeled “Judul bagian” so they are not confused with the form title.
+
+## 2026-08-19 — Allow empty question labels while editing
+
+- Autosave no longer shows “Label pertanyaan wajib diisi” when a question title is blank.
+- Blank labels are stored as “Pertanyaan tanpa judul”.
+
+## 2026-08-19 — Preview tab
+
+- Moved form preview out of the editor canvas into its own **Pratinjau** tab.
+- Preview shows the respondent view of the current draft (answers are not submitted).
+
+## 2026-08-19 — Google Forms–style builder layout
+
+- Form editor is a centered canvas: title card, question cards, and a floating add toolbar.
+- Removed the side-by-side live preview; the cards are the form (select a card to edit).
+- Add question / add section sit beside the selected card (desktop) and in a bottom bar (mobile).
+
+## 2026-08-18 — Form sections (multi-page forms)
+
+- Creators can split a form into sections; each section is a page for respondents.
+- Builder: add, rename, reorder, and delete sections; questions stay grouped per page.
+- Public fill: Next / Back, page progress, and validation of the current page before continuing.
+- Existing single-page forms keep working (one implicit section).
+
+## 2026-08-18 — Fix Google sign-in popup
+
+- Set `Cross-Origin-Opener-Policy: same-origin-allow-popups` so the Google popup can return the credential to the app.
+- Initialize Firebase Auth in the browser with `browserPopupRedirectResolver` and pass it to `signInWithPopup`.
+- Map more Firebase errors (provider disabled, network, popup/internal) instead of a generic failure.
+
+## 2026-08-18 — Allow LAN origin in Next.js dev
+
+- Set `allowedDevOrigins` in `next.config.ts` so the app can be loaded from `192.168.1.140` during `next dev` without blocked `/_next` requests.
+
 ## 2026-08-13 — Concurrent public submit hardening
 
 - Submit/upload rate limits: per-IP and per-form windows, with in-memory bucket pruning under load.

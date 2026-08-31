@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { clearSessionCookie } from "@/lib/firebase/auth";
+import { revokeSessionAndClearCookie } from "@/lib/firebase/auth";
 
 export async function POST() {
-  await clearSessionCookie();
+  await revokeSessionAndClearCookie();
   return NextResponse.json({ ok: true });
 }

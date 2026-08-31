@@ -6,6 +6,7 @@ const userSchema = new Schema(
     email: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
     photoURL: { type: String },
+    onboardingCompletedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

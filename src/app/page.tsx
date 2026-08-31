@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { getSessionUser } from "@/lib/firebase/auth";
 import { ui } from "@/lib/ui-id";
 
@@ -52,9 +53,13 @@ export default async function HomePage() {
 
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-16 sm:px-10 lg:py-20">
           <div className="max-w-xl space-y-8">
-            <p className="motion-fade-up font-[family-name:var(--font-fraunces)] text-5xl font-semibold tracking-tight text-ink sm:text-6xl lg:text-7xl">
-              {ui.brand}
-            </p>
+            <BrandLogo
+              href="/"
+              size="hero"
+              layout="stacked"
+              priority
+              className="motion-fade-up"
+            />
             <div className="motion-fade-up-delay space-y-4">
               <h1 className="text-2xl font-medium leading-snug text-ink sm:text-3xl">
                 {ui.landingHeadline}

@@ -56,17 +56,22 @@ Prefer **embedded** arrays for form structure and answers (natural for MongoDB).
 
 ```
 users                          # app profile mirror (identity lives in Firebase Auth)
-  _id, firebaseUid, email, name, photoURL?, createdAt, updatedAt
+  _id, firebaseUid, email, name, photoURL?, onboardingCompletedAt?, createdAt, updatedAt
 
 forms
   _id, ownerId,                # ownerId = Firebase UID (string)
   title, description, slug, shortCode, status (draft|published|closed),
   confirmationMessage,
+  themeId,                     # teal | forest | ocean | sunset | grape | slate | paper
+  limitOneResponse,            # cookie + respondentKey: one submit per browser
+  sections: [
+    { id, title, description, order }   // each section = one public page
+  ],
   questions: [
     {
       id,           // string (cuid) — stable id for answers
       type,         // short_text | long_text | multiple_choice | checkboxes | dropdown | email | number | date
-      label, helpText, required, order,
+      label, helpText, required, order, sectionId,
       options?: { choices: [{ id, label }] }
     }
   ],
@@ -74,7 +79,7 @@ forms
 
 responses
   _id, formId, submittedAt,
-  meta?: { userAgent?, ipHash? },
+  meta?: { userAgent?, ipHash?, respondentKey? },
   answers: [
     { questionId, value }   // value: string | number | string[] | null
   ]
@@ -217,7 +222,7 @@ src/
 
 - [x] Session / verified Firebase cookie required for dashboard + form editor layouts
 - [x] Ownership checks on every form/response query (`ownerId === uid`)
-- [x] Rate-limit public submit/upload (in-memory: per IP + per form; bucket prune)
+- [x] Rate-limit public submit/upload (Upstash Redis when configured; in-memory fallback per process)
 - [x] Mongo pool sized for concurrent public writes (`maxPoolSize`)
 - [x] Load smoke script: `npm run load:submit -- --slug=… --answers=…`
 - [x] MVP uses plain text only (no rich text HTML)
@@ -230,6 +235,8 @@ src/
 
 
 ## 9. Evolution (post-MVP)
+
+**v1.2.0 (planned):** WhatsApp share; `forms.uniqueBy` + `responses.meta.uniqueKey`; form templates in code; daftar hadir query; receipt id on response. See `docs/V1.2.0.md`.
 
 - Branching logic as question rules on the form document
 - File uploads → object storage + URL fields on answers

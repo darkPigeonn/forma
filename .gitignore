@@ -13,6 +13,11 @@
 # testing
 /coverage
 /scripts/fixtures/
+/e2e/.fixture.json
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 
 # next.js
 /.next/

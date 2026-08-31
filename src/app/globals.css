@@ -43,6 +43,19 @@ body {
   outline-offset: 2px;
 }
 
+/* Shared page width for dashboard + form editor */
+.page-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* White bordered panel for settings, dashboard blocks, auth cards, etc. */
+@utility forma-section {
+  @apply rounded-xl border border-border bg-bg-elevated p-4 sm:p-5;
+}
+
 .skip-link {
   position: absolute;
   left: 1rem;
@@ -145,4 +158,22 @@ select:not([multiple]):disabled {
 select:not([multiple]):focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #survey-analytics,
+  #survey-analytics * {
+    visibility: visible;
+  }
+
+  #survey-analytics {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
 }

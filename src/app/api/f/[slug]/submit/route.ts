@@ -1,7 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { hashIp, validateAnswersAgainstQuestions } from "@/domain/answers";
 import { getPublicFormBySlug } from "@/db/queries/public-forms";
-import { createFormResponse } from "@/db/queries/responses";
+import {
+  createFormResponse,
+  hasResponseForRespondent,
+  hasResponseForUniqueKey,
+} from "@/db/queries/responses";
+import { uniqueKeyFromAnswers } from "@/domain/unique-key";
+import {
+  createRespondentToken,
+  hashRespondentToken,
+  respondentCookieName,
+  respondentCookieOptions,
+} from "@/lib/respondent-cookie";
 import {
   PUBLIC_SUBMIT_LIMITS,
   rateLimitAll,
@@ -16,11 +27,11 @@ type RouteContext = {
 
 const MAX_JSON_BYTES = 256 * 1024;
 
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(request: NextRequest, context: RouteContext) {
   const { slug } = await context.params;
   const ip = clientIp(request);
 
-  const limited = rateLimitAll([
+  const limited = await rateLimitAll([
     {
       key: `submit:ip:${slug}:${ip}`,
       limit: PUBLIC_SUBMIT_LIMITS.perIpPerMinute,
@@ -91,6 +102,7 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const validated = validateAnswersAgainstQuestions(
+    form.id,
     form.questions,
     parsed.data.answers,
   );
@@ -102,14 +114,91 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
+  const uniqueResult = uniqueKeyFromAnswers(
+    form.uniqueBy,
+    form.uniqueQuestionId,
+    form.questions,
+    validated.answers,
+  );
+  if (!uniqueResult.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: ui.fixHighlightedFields,
+        errors: [
+          {
+            questionId: uniqueResult.questionId,
+            message: uniqueResult.message,
+          },
+        ],
+      },
+      { status: 400 },
+    );
+  }
+  if (uniqueResult.key) {
+    if (await hasResponseForUniqueKey(form.id, uniqueResult.key)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: ui.uniqueAlreadyUsed,
+          errors: form.uniqueQuestionId
+            ? [
+                {
+                  questionId: form.uniqueQuestionId,
+                  message: ui.uniqueAlreadyUsed,
+                },
+              ]
+            : undefined,
+        },
+        { status: 409 },
+      );
+    }
+  }
+
+  const cookieName = respondentCookieName(form.id);
+  let respondentToken = request.cookies.get(cookieName)?.value;
+  let respondentKey: string | undefined;
+
+  if (form.limitOneResponse) {
+    if (respondentToken) {
+      respondentKey = hashRespondentToken(respondentToken);
+      if (await hasResponseForRespondent(form.id, respondentKey)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: ui.alreadySubmittedBody,
+            alreadySubmitted: true,
+          },
+          { status: 409 },
+        );
+      }
+    } else {
+      respondentToken = createRespondentToken();
+      respondentKey = hashRespondentToken(respondentToken);
+    }
+  }
+
+  let created: { id: string; submittedAt: string };
   try {
-    await createFormResponse({
+    created = await createFormResponse({
       formId: form.id,
       answers: validated.answers,
       userAgent: request.headers.get("user-agent") ?? undefined,
       ipHash: hashIp(ip),
+      respondentKey,
+      uniqueKey: uniqueResult.key ?? undefined,
     });
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: ui.alreadySubmittedBody,
+          alreadySubmitted: true,
+        },
+        { status: 409 },
+      );
+    }
     console.error("submit failed", error);
     return NextResponse.json(
       { ok: false, error: ui.couldNotSaveResponse },
@@ -117,8 +206,27 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     confirmationMessage: form.confirmationMessage,
+    receiptId: created.id.replace(/[^a-z0-9]/gi, "").slice(-8).toUpperCase(),
+    submittedAt: created.submittedAt,
   });
+  if (form.limitOneResponse && respondentToken) {
+    response.cookies.set(
+      cookieName,
+      respondentToken,
+      respondentCookieOptions(),
+    );
+  }
+  return response;
+}
+
+function isDuplicateKeyError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: unknown }).code === 11000
+  );
 }

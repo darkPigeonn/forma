@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/firebase/auth";
-import { getOwnedResponsesCsv } from "@/db/queries/responses";
+import { getAccessibleResponsesCsv } from "@/db/queries/responses";
 
 type RouteContext = {
   params: Promise<{ formId: string }>;
@@ -13,7 +13,11 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { formId } = await context.params;
-  const result = await getOwnedResponsesCsv(formId, user.uid);
+  const result = await getAccessibleResponsesCsv(
+    formId,
+    user.uid,
+    user.email,
+  );
 
   if (!result) {
     return NextResponse.json({ error: "Form not found" }, { status: 404 });

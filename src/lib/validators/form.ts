@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { FORM_STATUSES } from "@/lib/form-constants";
+import {
+  FORM_STATUSES,
+  FORM_THEME_IDS,
+  UNIQUE_BY_MODES,
+} from "@/lib/form-constants";
 
 export const formIdSchema = z.string().min(1);
 
@@ -10,6 +14,7 @@ export const createFormSchema = z.object({
     .min(1, "Title is required")
     .max(200, "Title is too long")
     .optional(),
+  templateId: z.string().min(1).optional(),
 });
 
 export const renameFormSchema = z.object({
@@ -35,4 +40,7 @@ export const updateFormMetaSchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   description: z.string().max(5000).optional(),
   confirmationMessage: z.string().trim().min(1).max(1000).optional(),
+  themeId: z.enum(FORM_THEME_IDS).optional(),
+  limitOneResponse: z.boolean().optional(),
+  uniqueBy: z.enum(UNIQUE_BY_MODES).optional(),
 });

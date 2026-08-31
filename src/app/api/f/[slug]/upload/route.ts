@@ -16,7 +16,7 @@ export async function POST(request: Request, context: RouteContext) {
   const { slug } = await context.params;
   const ip = clientIp(request);
 
-  const limited = rateLimitAll([
+  const limited = await rateLimitAll([
     {
       key: `upload:ip:${slug}:${ip}`,
       limit: PUBLIC_UPLOAD_LIMITS.perIpPerMinute,

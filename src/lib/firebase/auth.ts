@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { connectDb } from "@/db/client";
 import { User, type UserDocument } from "@/db/models/user";
 import { getAdminAuth } from "@/lib/firebase/admin";
+import { activatePendingInvitesForUser } from "@/db/queries/collaborators";
+import { featureFlags } from "@/lib/feature-flags";
 import { ui } from "@/lib/ui-id";
 
 export const SESSION_COOKIE_NAME = "forma_session";
@@ -37,6 +39,10 @@ export async function createSessionCookie(idToken: string) {
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
+  if (profile.email && featureFlags.collaborators) {
+    await activatePendingInvitesForUser(decoded.uid, profile.email);
+  }
+
   return { sessionCookie, profile, decoded };
 }
 
@@ -49,6 +55,23 @@ export async function clearSessionCookie() {
     path: "/",
     maxAge: 0,
   });
+}
+
+/** Invalidate the Firebase session and clear the browser cookie. */
+export async function revokeSessionAndClearCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+
+  if (session) {
+    try {
+      const decoded = await getAdminAuth().verifySessionCookie(session, false);
+      await getAdminAuth().revokeRefreshTokens(decoded.uid);
+    } catch {
+      // Cookie already invalid or expired — still clear it below.
+    }
+  }
+
+  await clearSessionCookie();
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {

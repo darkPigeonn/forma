@@ -6,7 +6,10 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { getClientAuth } from "@/lib/firebase/client";
+import {
+  browserPopupRedirectResolver,
+  getClientAuth,
+} from "@/lib/firebase/client";
 import { ui } from "@/lib/ui-id";
 
 function mapGoogleError(code: string | undefined) {
@@ -20,6 +23,14 @@ function mapGoogleError(code: string | undefined) {
       return ui.googleAccountExists;
     case "auth/unauthorized-domain":
       return ui.googleUnauthorizedDomain;
+    case "auth/operation-not-allowed":
+      return ui.googleProviderDisabled;
+    case "auth/network-request-failed":
+      return ui.networkError;
+    case "auth/internal-error":
+    case "auth/argument-error":
+    case "auth/operation-not-supported-in-this-environment":
+      return ui.googlePopupFailed;
     default:
       return ui.googleSignInFailed;
   }
@@ -28,12 +39,14 @@ function mapGoogleError(code: string | undefined) {
 type GoogleSignInButtonProps = {
   label?: string;
   disabled?: boolean;
+  redirectTo?: string;
   onError?: (message: string) => void;
 };
 
 export function GoogleSignInButton({
   label = ui.continueWithGoogle,
   disabled = false,
+  redirectTo = "/dashboard",
   onError,
 }: GoogleSignInButtonProps) {
   const router = useRouter();
@@ -46,17 +59,26 @@ export function GoogleSignInButton({
       const auth = getClientAuth();
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(
+        auth,
+        provider,
+        browserPopupRedirectResolver,
+      );
       const idToken = await credential.user.getIdToken();
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
+      let res: Response;
+      try {
+        res = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        });
+      } catch {
+        throw new Error("session");
+      }
       if (!res.ok) {
         throw new Error("session");
       }
-      router.replace("/dashboard");
+      router.replace(redirectTo);
       router.refresh();
     } catch (err) {
       const code =

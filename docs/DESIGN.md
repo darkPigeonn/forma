@@ -46,8 +46,8 @@ Do **not** use Inter, Roboto, Arial, or system-ui as the primary brand stack.
 |---------|------|
 | **Marketing / landing** | One composition first viewport: brand + one headline + one line + CTA + full-bleed visual. No cards in hero. |
 | **Dashboard** | Functional list: forms as rows/table, not card grids by default |
-| **Builder** | Split or stacked: question list + preview; one job per panel |
-| **Public form** | Single column, generous spacing, sticky progress optional later |
+| **Builder** | Centered paper canvas (the editor is the form); floating add-question / add-section tools |
+| **Public form** | Single column, generous spacing; show page progress when the form has multiple sections |
 
 **Cards:** Only when they wrap an interaction (e.g. question editor block). Prefer borders/spacing over shadows.
 
@@ -56,7 +56,7 @@ Do **not** use Inter, Roboto, Arial, or system-ui as the primary brand stack.
 ## 3. Component UX rules
 
 ### Builder
-- Clear “add question” affordance near last question
+- Clear “add question” / “add section” in a floating toolbar beside the selected card (bottom bar on mobile)
 - Type picker: readable labels, not icon-only
 - Required: toggle with visible label
 - Autosave status: “Saving…” / “Saved” (aria-live polite)
@@ -101,7 +101,7 @@ No parallax, no endless floating blobs.
 | Breakpoint | Use |
 |------------|-----|
 | &lt; 768px | Public form primary; builder may stack / simplify |
-| ≥ 768px | Builder two-pane comfortable |
+| ≥ 768px | Builder canvas comfortable; add toolbar beside the selected card |
 | ≥ 1280px | Max content width ~1120–1200px for builder |
 
 ---

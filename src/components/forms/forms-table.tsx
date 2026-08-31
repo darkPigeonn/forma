@@ -10,6 +10,7 @@ import {
 import { CreateFormButton } from "@/components/forms/create-form-button";
 import type { FormListItem } from "@/db/queries/forms";
 import { formatDateTime } from "@/lib/format-date";
+import { featureFlags } from "@/lib/feature-flags";
 import { ui } from "@/lib/ui-id";
 
 const statusLabel: Record<FormListItem["status"], string> = {
@@ -105,6 +106,7 @@ export function FormsTable({ forms }: FormsTableProps) {
           <tbody>
             {forms.map((form) => {
               const busy = isPending && pendingId === form.id;
+              const isOwner = form.accessRole === "owner";
               return (
                 <tr
                   key={form.id}
@@ -117,9 +119,16 @@ export function FormsTable({ forms }: FormsTableProps) {
                     >
                       {form.title}
                     </Link>
-                    <p className="text-xs text-ink-muted">
-                      {ui.questionsCount(form.questionCount)}
-                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <p className="text-xs text-ink-muted">
+                        {ui.questionsCount(form.questionCount)}
+                      </p>
+                      {!isOwner && featureFlags.collaborators ? (
+                        <span className="inline-flex rounded-md bg-border px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                          {ui.collaboratorSharedBadge}
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-ink-muted">
                     {statusLabel[form.status]}
@@ -147,39 +156,43 @@ export function FormsTable({ forms }: FormsTableProps) {
                       >
                         {form.status === "draft" ? ui.edit : ui.open}
                       </Link>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted disabled:opacity-60"
-                        onClick={() =>
-                          runAction(
-                            form.id,
-                            () => duplicateFormAction({ formId: form.id }),
-                            (result) => {
-                              if (result.formId) {
-                                router.push(`/forms/${result.formId}`);
+                      {isOwner ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted disabled:opacity-60"
+                            onClick={() =>
+                              runAction(
+                                form.id,
+                                () => duplicateFormAction({ formId: form.id }),
+                                (result) => {
+                                  if (result.formId) {
+                                    router.push(`/forms/${result.formId}`);
+                                  }
+                                },
+                              )
+                            }
+                          >
+                            {ui.duplicate}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium text-danger hover:border-danger disabled:opacity-60"
+                            onClick={() => {
+                              if (!window.confirm(ui.deleteConfirm(form.title))) {
+                                return;
                               }
-                            },
-                          )
-                        }
-                      >
-                        {ui.duplicate}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium text-danger hover:border-danger disabled:opacity-60"
-                        onClick={() => {
-                          if (!window.confirm(ui.deleteConfirm(form.title))) {
-                            return;
-                          }
-                          runAction(form.id, () =>
-                            deleteFormAction({ formId: form.id }),
-                          );
-                        }}
-                      >
-                        {ui.delete}
-                      </button>
+                              runAction(form.id, () =>
+                                deleteFormAction({ formId: form.id }),
+                              );
+                            }}
+                          >
+                            {ui.delete}
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

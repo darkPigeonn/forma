@@ -20,6 +20,8 @@ const responseSchema = new Schema(
     meta: {
       userAgent: String,
       ipHash: String,
+      respondentKey: String,
+      uniqueKey: String,
     },
     answers: { type: [answerSchema], default: [] },
   },
@@ -27,6 +29,14 @@ const responseSchema = new Schema(
 );
 
 responseSchema.index({ formId: 1, submittedAt: -1 });
+responseSchema.index(
+  { formId: 1, "meta.respondentKey": 1 },
+  { unique: true, sparse: true },
+);
+responseSchema.index(
+  { formId: 1, "meta.uniqueKey": 1 },
+  { unique: true, sparse: true },
+);
 
 export type ResponseDocument = InferSchemaType<typeof responseSchema> & {
   _id: Types.ObjectId;

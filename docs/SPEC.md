@@ -1,8 +1,8 @@
 # Forma — Product Specification
 
 **Product:** Forma — a form builder & response collector (Google Forms–like)  
-**Version:** 0.1 (MVP)  
-**Last updated:** 2026-08-12
+**Version:** 0.1 (MVP) · **Next:** 1.2.0 (see `docs/V1.2.0.md`)  
+**Last updated:** 2026-08-19
 
 ---
 
@@ -45,13 +45,15 @@ Forma lets anyone create a form, share a link, collect answers, and review resul
 - Per question: required toggle, options editor (for choice types)
 - Live preview of the public form
 - Autosave while editing
+- **Sections / pages:** split questions into pages; respondents use Next / Back
 
 ### Public form (respondent)
 - Unique short shareable URL (`/f/{shortCode}`, ~8 chars; legacy long slugs still open)
 - Mobile-first, accessible form fill UX
+- Multi-page fill when the form has more than one section (progress, Next / Back, validate page before continuing)
 - Client + server validation
 - Success confirmation after submit
-- Optional: one response per user later (MVP = anonymous OK)
+- Optional: limit to one response per browser (cookie + server check)
 
 ### Responses
 - Response list per form
@@ -62,6 +64,22 @@ Forma lets anyone create a form, share a link, collect answers, and review resul
 ### Settings (MVP-light)
 - Form open/close
 - Confirmation message text
+- Form theme (preset colors for the public fill page)
+- Limit to 1 response per browser
+
+---
+
+## 3b. v1.2.0 (planned)
+
+Not G-Form feature-parity. Differentiation for Indonesian orgs (paroki, sekolah, komunitas):
+
+- WhatsApp share pack (caption + short link + optional share image)
+- One response per **HP or email** (not only browser cookie)
+- Acara templates + daftar hadir
+- Submit receipt (bukti kirim)
+- Stretch: response status (baru / diproses / selesai)
+
+Full plan: `docs/V1.2.0.md`.
 
 ---
 
@@ -71,7 +89,7 @@ Forma lets anyone create a form, share a link, collect answers, and review resul
 - Quiz scoring / answer keys
 - Logic branching (show/hide)
 - Collaborators / team roles
-- Themes beyond brand defaults
+- Custom CSS / fully free-form theming (presets are in)
 - Google Sheets sync, Zapier
 - Offline PWA
 - AI form generation (later)
@@ -104,8 +122,9 @@ Forma lets anyone create a form, share a link, collect answers, and review resul
 
 | Term | Meaning |
 |------|---------|
-| **Form** | Container: title, description, questions, settings, status |
-| **Question** | One field with type, label, config, order, required |
+| **Form** | Container: title, description, sections, questions, settings, status |
+| **Section** | A page of the form: title, description, and its questions |
+| **Question** | One field with type, label, config, order, required, section |
 | **Response** | One submission: answers + metadata (time, optional user) |
 | **Answer** | Value for one question inside a response |
 | **Slug** | Public URL identifier for a published form |

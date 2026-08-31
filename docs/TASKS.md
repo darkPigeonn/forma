@@ -61,9 +61,42 @@ Tasks below are what **I (the coding agent) will do** when you say to start buil
 ## Post-MVP (requested)
 - [x] Short public share links (`shortCode` + `/f/{code}`)
 - [x] Concurrent public fill hardening (rate limits, pool, load script)
+- [x] Form sections / multi-page public fill
+- [x] Form theme presets (public fill + preview)
+- [x] Limit to one response per browser
+- [x] Post-login onboarding tour
 
-## Explicitly later (not my MVP work unless you ask)
-- Branching logic, collaborators, themes, AI generate, Sheets sync
+## v1.2.0 — Differentiation (plan in `docs/V1.2.0.md`)
+
+Start when you say **“Start v1.2.0”** or **“Start slice A”**.
+
+### A — WhatsApp share pack
+- [x] Action bar: Bagikan ke WhatsApp (`wa.me` + title + short URL)
+- [x] Copy share caption
+- [x] Simple share-card image (title + Forma + URL) for status/grup
+
+### B — Unique HP / email (true 1-person response)
+- [x] Settings: unique mode `browser` | `phone` | `email` (browser = current cookie)
+- [x] Bind to an existing question or auto-add HP/email
+- [x] Normalize phone/email; reject duplicate on submit with inline error
+- [x] Index `responses` on `formId + meta.uniqueKey` (sparse)
+
+### C — Acara templates + daftar hadir
+- [x] Dashboard: Mulai dari template
+- [x] Templates: Pendaftaran acara, Pendataan singkat, Umpan balik kegiatan
+- [x] Responses: Daftar hadir table (name, HP, time) + print CSS
+- [x] Keep CSV export
+
+### D — Bukti kirim
+- [x] Public success: receipt (title, time, short response id)
+- [x] Print / copy summary
+
+### E — Stretch (only after A–D)
+- [ ] Response status: baru | diproses | selesai
+- [ ] Filter daftar hadir by status
+
+## Explicitly later (v1.3+, not v1.2.0)
+- Save & continue, WA OTP / Business API, collaborators, branching, custom CSS, AI generate, Sheets, parish directory
 
 ---
 

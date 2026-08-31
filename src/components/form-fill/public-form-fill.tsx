@@ -10,26 +10,68 @@ import {
 } from "react";
 import type { PublicFormView } from "@/db/queries/public-forms";
 import type { AnswerValue, FileAnswerValue } from "@/domain/answers";
+import { buildFormPages } from "@/domain/forms";
+import type { QuestionInput } from "@/lib/validators/question";
 import { isChoiceQuestionType } from "@/lib/validators/question";
+import { RangeQuestionInput } from "@/components/form-fill/range-question-input";
+import { FormQuestionCard } from "@/components/form-fill/form-question-card";
+import { formFillTypography } from "@/components/form-fill/form-fill-typography";
+import { normalizeRangeValue } from "@/lib/range-question";
+import { formatDateTime } from "@/lib/format-date";
+import { localSubmittedKey } from "@/lib/respondent-cookie";
 import { ui } from "@/lib/ui-id";
 
 type PublicFormFillProps = {
   form: PublicFormView;
+  alreadySubmitted?: boolean;
 };
 
 type FieldErrors = Record<string, string>;
 
-export function PublicFormFill({ form }: PublicFormFillProps) {
+function readLocalSubmitted(
+  formId: string,
+  limitOneResponse: boolean,
+  alreadySubmitted: boolean,
+) {
+  if (alreadySubmitted) {
+    return { done: true, repeatVisit: true };
+  }
+  if (!limitOneResponse) {
+    return { done: false, repeatVisit: false };
+  }
+  try {
+    const submitted = Boolean(
+      window.localStorage.getItem(localSubmittedKey(formId)),
+    );
+    return { done: submitted, repeatVisit: submitted };
+  } catch {
+    return { done: false, repeatVisit: false };
+  }
+}
+
+export function PublicFormFill({
+  form,
+  alreadySubmitted = false,
+}: PublicFormFillProps) {
   const questions = useMemo(
     () => [...form.questions].sort((a, b) => a.order - b.order),
     [form.questions],
   );
+  const pages = useMemo(
+    () => buildFormPages(form.sections ?? [], questions, { skipEmpty: true }),
+    [form.sections, questions],
+  );
+  const [pageIndex, setPageIndex] = useState(0);
+  const currentPage = pages[Math.min(pageIndex, pages.length - 1)] ?? pages[0];
+  const currentQuestions = currentPage?.questions ?? questions;
+  const isLastPage = pageIndex >= pages.length - 1;
+  const multiPage = pages.length > 1;
 
   const [values, setValues] = useState<Record<string, AnswerValue>>(() => {
     const initial: Record<string, AnswerValue> = {};
     for (const q of questions) {
       if (q.type === "checkboxes") initial[q.id] = [];
-      else if (q.type === "file_upload") initial[q.id] = null;
+      else if (q.type === "file_upload" || q.type === "range") initial[q.id] = null;
       else initial[q.id] = "";
     }
     return initial;
@@ -38,15 +80,38 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const initialVisit = readLocalSubmitted(
+    form.id,
+    form.limitOneResponse,
+    alreadySubmitted,
+  );
+  const [done, setDone] = useState(initialVisit.done);
   const [confirmation, setConfirmation] = useState(form.confirmationMessage);
+  const [repeatVisit, setRepeatVisit] = useState(initialVisit.repeatVisit);
+  const [receipt, setReceipt] = useState<{
+    id: string;
+    submittedAt: string;
+  } | null>(null);
   const statusId = useId();
   const firstFieldRef = useRef<HTMLElement | null>(null);
+
+  const skipPageScroll = useRef(true);
 
   useEffect(() => {
     if (form.status !== "published" || done) return;
     firstFieldRef.current?.focus();
-  }, [form.status, done]);
+    if (skipPageScroll.current) {
+      skipPageScroll.current = false;
+      return;
+    }
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    document.getElementById("public-form-top")?.scrollIntoView({
+      block: "start",
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [form.status, done, pageIndex]);
 
   function setValue(questionId: string, value: AnswerValue) {
     setValues((prev) => ({ ...prev, [questionId]: value }));
@@ -58,9 +123,9 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
     });
   }
 
-  function clientValidate(): FieldErrors {
+  function clientValidate(scope: QuestionInput[] = questions): FieldErrors {
     const next: FieldErrors = {};
-    for (const q of questions) {
+    for (const q of scope) {
       const value = values[q.id];
       const blank =
         value === null ||
@@ -88,6 +153,11 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
           typeof value === "number" ? value : Number(String(value).trim());
         if (!Number.isFinite(num)) {
           next[q.id] = ui.validNumber;
+        }
+      }
+      if (q.type === "range") {
+        if (normalizeRangeValue(q, value) === null) {
+          next[q.id] = ui.validRangeValue;
         }
       }
       if (q.type === "file_upload") {
@@ -156,9 +226,24 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
     }
     setFormError(null);
 
-    const localErrors = clientValidate();
+    if (!isLastPage) {
+      const pageErrors = clientValidate(currentQuestions);
+      if (Object.keys(pageErrors).length) {
+        setErrors(pageErrors);
+        return;
+      }
+      setPageIndex((index) => Math.min(index + 1, pages.length - 1));
+      return;
+    }
+
+    const localErrors = clientValidate(questions);
     if (Object.keys(localErrors).length) {
       setErrors(localErrors);
+      const firstId = Object.keys(localErrors)[0];
+      const errorPage = pages.findIndex((page) =>
+        page.questions.some((question) => question.id === firstId),
+      );
+      if (errorPage >= 0) setPageIndex(errorPage);
       return;
     }
 
@@ -179,17 +264,39 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
         ok: boolean;
         error?: string;
         confirmationMessage?: string;
+        alreadySubmitted?: boolean;
+        receiptId?: string;
+        submittedAt?: string;
         errors?: { questionId: string; message: string }[];
       };
 
-      if (!res.ok || !data.ok) {
-        if (data.errors?.length) {
-          const mapped: FieldErrors = {};
-          for (const err of data.errors) {
-            mapped[err.questionId] = err.message;
-          }
-          setErrors(mapped);
+      if (data.errors?.length) {
+        const mapped: FieldErrors = {};
+        for (const err of data.errors) {
+          mapped[err.questionId] = err.message;
         }
+        setErrors(mapped);
+        const firstId = data.errors[0]?.questionId;
+        const errorPage = pages.findIndex((page) =>
+          page.questions.some((question) => question.id === firstId),
+        );
+        if (errorPage >= 0) setPageIndex(errorPage);
+        setFormError(data.error ?? ui.couldNotSubmit);
+        return;
+      }
+
+      if (data.alreadySubmitted || res.status === 409) {
+        try {
+          window.localStorage.setItem(localSubmittedKey(form.id), "1");
+        } catch {
+          // ignore
+        }
+        setRepeatVisit(true);
+        setDone(true);
+        return;
+      }
+
+      if (!res.ok || !data.ok) {
         setFormError(data.error ?? ui.couldNotSubmit);
         return;
       }
@@ -197,6 +304,19 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
       setConfirmation(
         data.confirmationMessage ?? form.confirmationMessage,
       );
+      if (data.receiptId) {
+        setReceipt({
+          id: data.receiptId,
+          submittedAt: data.submittedAt ?? new Date().toISOString(),
+        });
+      }
+      if (form.limitOneResponse) {
+        try {
+          window.localStorage.setItem(localSubmittedKey(form.id), "1");
+        } catch {
+          // ignore
+        }
+      }
       setDone(true);
     } catch {
       setFormError(ui.networkError);
@@ -212,10 +332,19 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
         role="status"
         aria-live="polite"
       >
-        <p className="font-[family-name:var(--font-fraunces)] text-2xl font-semibold text-ink">
-          {ui.responseRecorded}
+        <p className={formFillTypography.title}>
+          {repeatVisit ? ui.alreadySubmitted : ui.responseRecorded}
         </p>
-        <p className="whitespace-pre-wrap text-ink-muted">{confirmation}</p>
+        <p className={`whitespace-pre-wrap ${formFillTypography.lead}`}>
+          {repeatVisit ? ui.alreadySubmittedBody : confirmation}
+        </p>
+        {receipt && !repeatVisit ? (
+          <ReceiptBlock
+            title={form.title}
+            receiptId={receipt.id}
+            submittedAt={receipt.submittedAt}
+          />
+        ) : null}
       </div>
     );
   }
@@ -226,36 +355,74 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
         className="space-y-3 rounded-md border border-border bg-bg-elevated p-6"
         role="status"
       >
-        <h1 className="font-[family-name:var(--font-fraunces)] text-2xl font-semibold">
+        <h1 className={formFillTypography.title}>
           {form.title}
         </h1>
-        <p className="text-ink-muted">{ui.formClosedBody}</p>
+        <p className={formFillTypography.lead}>{ui.formClosedBody}</p>
       </div>
     );
   }
 
-  const fieldClass =
-    "w-full rounded-md border border-border bg-bg-elevated px-3 text-ink";
+  const fieldClass = formFillTypography.field;
 
   return (
     <form
+      id="public-form-top"
       onSubmit={onSubmit}
       className="space-y-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
       noValidate
     >
       <div className="space-y-2">
-        <h1 className="font-[family-name:var(--font-fraunces)] text-3xl font-semibold text-ink">
+        <h1 className={formFillTypography.title}>
           {form.title}
         </h1>
-        {form.description ? (
-          <p className="whitespace-pre-wrap text-ink-muted">
+        {pageIndex === 0 && form.description ? (
+          <p className={`whitespace-pre-wrap ${formFillTypography.lead}`}>
             {form.description}
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-6">
-        {questions.map((question, questionIndex) => {
+      {multiPage ? (
+        <div className="space-y-2">
+          <p className={formFillTypography.meta}>
+            {ui.pageOf(pageIndex + 1, pages.length)}
+          </p>
+          <div
+            role="progressbar"
+            aria-label={ui.formProgress}
+            aria-valuemin={1}
+            aria-valuemax={pages.length}
+            aria-valuenow={pageIndex + 1}
+            className="h-1.5 overflow-hidden rounded-full bg-border"
+          >
+            <div
+              className="h-full bg-accent"
+              style={{
+                width: `${((pageIndex + 1) / pages.length) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {currentPage?.section.title || currentPage?.section.description ? (
+        <div className="space-y-1">
+          {currentPage.section.title ? (
+            <h2 className={formFillTypography.sectionTitle}>
+              {currentPage.section.title}
+            </h2>
+          ) : null}
+          {currentPage.section.description ? (
+            <p className={`whitespace-pre-wrap ${formFillTypography.lead}`}>
+              {currentPage.section.description}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="space-y-4">
+        {currentQuestions.map((question, questionIndex) => {
           const fieldId = `q-${question.id}`;
           const helpId = `${fieldId}-help`;
           const errorId = `${fieldId}-error`;
@@ -269,18 +436,21 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
             .join(" ") || undefined;
 
           return (
-            <div key={question.id} className="space-y-2">
+            <FormQuestionCard key={question.id}>
+              <div className="space-y-2">
               <label
                 htmlFor={
                   question.type === "multiple_choice" ||
-                  question.type === "checkboxes"
+                  question.type === "checkboxes" ||
+                  question.type === "range"
                     ? undefined
                     : fieldId
                 }
-                className="block text-sm font-medium text-ink"
+                className={formFillTypography.questionLabel}
               >
                 {question.type === "multiple_choice" ||
-                question.type === "checkboxes" ? (
+                question.type === "checkboxes" ||
+                question.type === "range" ? (
                   <span>{question.label}</span>
                 ) : (
                   <>{question.label}</>
@@ -297,7 +467,7 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
               </label>
 
               {question.helpText ? (
-                <p id={helpId} className="text-sm text-ink-muted">
+                <p id={helpId} className={formFillTypography.questionHelp}>
                   {question.helpText}
                 </p>
               ) : null}
@@ -326,7 +496,7 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
                   {(question.options?.choices ?? []).map((choice, choiceIndex) => (
                     <label
                       key={choice.id}
-                      className="flex min-h-11 items-center gap-2 text-sm"
+                      className={formFillTypography.choiceOption}
                     >
                       <input
                         type="radio"
@@ -360,7 +530,7 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
                     return (
                       <label
                         key={choice.id}
-                        className="flex min-h-11 items-center gap-2 text-sm"
+                        className={formFillTypography.choiceOption}
                       >
                         <input
                           type="checkbox"
@@ -402,6 +572,24 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
                     </option>
                   ))}
                 </select>
+              ) : question.type === "range" ? (
+                <RangeQuestionInput
+                  question={question}
+                  name={fieldId}
+                  describedBy={describedBy}
+                  invalid={Boolean(error)}
+                  required={question.required}
+                  disabled={pending}
+                  value={values[question.id]}
+                  firstInputRef={
+                    isFirst
+                      ? (el) => {
+                          firstFieldRef.current = el;
+                        }
+                      : undefined
+                  }
+                  onChange={(next) => setValue(question.id, next)}
+                />
               ) : question.type === "file_upload" ? (
                 <div className="space-y-2">
                   <input
@@ -426,11 +614,11 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
                       const file = e.target.files?.[0] ?? null;
                       void uploadFile(question.id, file);
                     }}
-                    className="block w-full text-sm text-ink file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-bg-elevated file:px-3 file:text-sm file:font-medium file:text-ink"
+                    className="block w-full text-base text-ink file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-bg-elevated file:px-3 file:text-base file:font-medium file:text-ink"
                   />
-                  <p className="text-xs text-ink-muted">{ui.fileUploadHint}</p>
+                  <p className={formFillTypography.hint}>{ui.fileUploadHint}</p>
                   {uploadingId === question.id ? (
-                    <p className="text-sm text-ink-muted" aria-live="polite">
+                    <p className={formFillTypography.hint} aria-live="polite">
                       {ui.uploadingFile}
                     </p>
                   ) : null}
@@ -438,7 +626,7 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
                   typeof values[question.id] === "object" &&
                   !Array.isArray(values[question.id]) &&
                   "name" in (values[question.id] as object) ? (
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <div className="flex flex-wrap items-center gap-2 text-base">
                       <span className="text-success">{ui.fileReady}:</span>
                       <span className="font-medium text-ink">
                         {(values[question.id] as FileAnswerValue).name}
@@ -482,28 +670,101 @@ export function PublicFormFill({ form }: PublicFormFillProps) {
               )}
 
               {error ? (
-                <p id={errorId} role="alert" className="text-sm text-danger">
+                <p id={errorId} role="alert" className={formFillTypography.error}>
                   {error}
                 </p>
               ) : null}
-            </div>
+              </div>
+            </FormQuestionCard>
           );
         })}
       </div>
 
       {formError ? (
-        <p id={statusId} role="alert" className="text-sm text-danger">
+        <p id={statusId} role="alert" className={formFillTypography.error}>
           {formError}
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-accent px-5 font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-      >
-        {pending ? ui.submitting : ui.submit}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        {multiPage && pageIndex > 0 ? (
+          <button
+            type="button"
+            onClick={() => setPageIndex((index) => Math.max(index - 1, 0))}
+            className={`inline-flex min-h-11 items-center justify-center rounded-md border border-border px-5 ${formFillTypography.button} text-ink hover:border-ink-muted`}
+          >
+            {ui.previousPage}
+          </button>
+        ) : null}
+        <button
+          type="submit"
+          disabled={pending}
+          className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-accent px-5 ${formFillTypography.button} text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none sm:w-auto`}
+        >
+          {pending
+            ? ui.submitting
+            : isLastPage
+              ? ui.submit
+              : ui.nextPage}
+        </button>
+      </div>
     </form>
+  );
+}
+
+function ReceiptBlock({
+  title,
+  receiptId,
+  submittedAt,
+}: {
+  title: string;
+  receiptId: string;
+  submittedAt: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const summary = `${title}\n${ui.receiptId}: ${receiptId}\n${ui.receiptTime}: ${formatDateTime(submittedAt)}`;
+
+  async function copySummary() {
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border border-border bg-bg-elevated p-4">
+      <p className="text-sm font-medium uppercase tracking-wide text-ink-muted">
+        {ui.receiptTitle}
+      </p>
+      <dl className="space-y-1 text-sm">
+        <div className="flex gap-2">
+          <dt className="text-ink-muted">{ui.receiptId}</dt>
+          <dd className="font-mono font-medium">{receiptId}</dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="text-ink-muted">{ui.receiptTime}</dt>
+          <dd>{formatDateTime(submittedAt)}</dd>
+        </div>
+      </dl>
+      <div className="flex flex-wrap gap-2 print:hidden">
+        <button
+          type="button"
+          onClick={() => void copySummary()}
+          className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted"
+        >
+          {copied ? ui.receiptCopied : ui.copyReceipt}
+        </button>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted"
+        >
+          {ui.printReceipt}
+        </button>
+      </div>
+    </div>
   );
 }

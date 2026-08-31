@@ -1,5 +1,12 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import {
+  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  type Auth,
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -9,6 +16,8 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
+let browserAuth: Auth | undefined;
 
 function assertClientConfig() {
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
@@ -24,5 +33,26 @@ export function getFirebaseApp(): FirebaseApp {
 }
 
 export function getClientAuth(): Auth {
-  return getAuth(getFirebaseApp());
+  if (browserAuth) {
+    return browserAuth;
+  }
+
+  const app = getFirebaseApp();
+
+  if (typeof window === "undefined") {
+    return getAuth(app);
+  }
+
+  try {
+    browserAuth = initializeAuth(app, {
+      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
+  } catch {
+    browserAuth = getAuth(app);
+  }
+
+  return browserAuth;
 }
+
+export { browserPopupRedirectResolver };

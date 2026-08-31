@@ -7,6 +7,16 @@ import {
   getAdminStorage,
   getStorageBucketName,
 } from "@/lib/firebase/admin";
+import {
+  isS3StorageConfigured,
+  putS3Object,
+  resolveViewableFileUrl,
+} from "@/lib/storage/s3";
+import {
+  applyImageExtension,
+  compressImageBuffer,
+  isCompressibleImageMime,
+} from "@/lib/storage/compress-image";
 
 export type UploadedFileMeta = {
   name: string;
@@ -73,14 +83,52 @@ export async function uploadFormFile(input: {
     throw new Error(allowed.error);
   }
 
+  let body = input.buffer;
+  let contentType = input.contentType || "application/octet-stream";
+  let displayName = input.originalName.slice(0, 255);
+
+  if (isCompressibleImageMime(contentType)) {
+    const compressed = await compressImageBuffer({
+      buffer: input.buffer,
+      contentType,
+      originalName: input.originalName,
+      preset: "upload",
+    });
+    body = compressed.buffer;
+    contentType = compressed.contentType;
+    if (compressed.compressed) {
+      displayName = applyImageExtension(displayName, compressed.extension).slice(
+        0,
+        255,
+      );
+    }
+  }
+
+  const safeName = sanitizeFileName(displayName) || "file";
+  const path = `form-uploads/${input.formId}/${input.questionId}/${createId()}-${safeName}`;
+
+  if (isS3StorageConfigured()) {
+    const storedUrl = await putS3Object({
+      key: path,
+      body,
+      contentType,
+      cacheControl: "private, max-age=0, no-cache",
+    });
+    return {
+      name: displayName,
+      url: storedUrl,
+      size: body.length,
+      contentType,
+      path,
+    };
+  }
+
   const bucketName = getStorageBucketName();
   const bucket = getAdminStorage().bucket(bucketName);
-  const safeName = sanitizeFileName(input.originalName) || "file";
-  const path = `form-uploads/${input.formId}/${input.questionId}/${createId()}-${safeName}`;
   const file = bucket.file(path);
 
-  await file.save(input.buffer, {
-    contentType: input.contentType || "application/octet-stream",
+  await file.save(body, {
+    contentType,
     resumable: false,
     metadata: {
       metadata: {
@@ -99,12 +147,23 @@ export async function uploadFormFile(input: {
   });
 
   return {
-    name: input.originalName.slice(0, 255),
+    name: displayName,
     url,
-    size: input.buffer.length,
-    contentType: input.contentType || "application/octet-stream",
+    size: body.length,
+    contentType,
     path,
   };
+}
+
+export async function resolveFileAnswerUrl(
+  value: UploadedFileMeta,
+): Promise<UploadedFileMeta> {
+  if (!isS3StorageConfigured()) return value;
+
+  const resolved = await resolveViewableFileUrl(value.path || value.url);
+  if (!resolved) return value;
+
+  return { ...value, url: resolved };
 }
 
 export function isFileAnswerValue(value: unknown): value is UploadedFileMeta {
