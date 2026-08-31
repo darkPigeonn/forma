@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import type { DecodedIdToken } from "firebase-admin/auth";
 import { connectDb } from "@/db/client";
 import { User, type UserDocument } from "@/db/models/user";
 import { getAdminAuth } from "@/lib/firebase/admin";
@@ -13,9 +14,17 @@ export type SessionUser = {
   uid: string;
   email: string;
   name: string;
+  phone?: string | null;
   photoURL?: string | null;
+  emailVerified: boolean;
+  signInProvider: string;
   profile: UserDocument;
 };
+
+function readSignInProvider(decoded: DecodedIdToken): string {
+  const provider = decoded.firebase?.sign_in_provider;
+  return typeof provider === "string" ? provider : "unknown";
+}
 
 export async function createSessionCookie(idToken: string) {
   const adminAuth = getAdminAuth();
@@ -43,7 +52,13 @@ export async function createSessionCookie(idToken: string) {
     await activatePendingInvitesForUser(decoded.uid, profile.email);
   }
 
-  return { sessionCookie, profile, decoded };
+  return {
+    sessionCookie,
+    profile,
+    decoded,
+    emailVerified: Boolean(decoded.email_verified),
+    signInProvider: readSignInProvider(decoded),
+  };
 }
 
 export async function clearSessionCookie() {
@@ -93,7 +108,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       uid: decoded.uid,
       email: profile.email,
       name: profile.name,
+      phone: profile.phone ?? null,
       photoURL: profile.photoURL,
+      emailVerified: Boolean(decoded.email_verified),
+      signInProvider: readSignInProvider(decoded),
       profile,
     };
   } catch {

@@ -10,6 +10,7 @@ import {
   browserPopupRedirectResolver,
   getClientAuth,
 } from "@/lib/firebase/client";
+import { establishSession } from "@/lib/firebase/session-client";
 import { ui } from "@/lib/ui-id";
 
 function mapGoogleError(code: string | undefined) {
@@ -65,20 +66,8 @@ export function GoogleSignInButton({
         browserPopupRedirectResolver,
       );
       const idToken = await credential.user.getIdToken();
-      let res: Response;
-      try {
-        res = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        });
-      } catch {
-        throw new Error("session");
-      }
-      if (!res.ok) {
-        throw new Error("session");
-      }
-      router.replace(redirectTo);
+      const nextPath = await establishSession(idToken);
+      router.replace(nextPath === "/dashboard" ? redirectTo : nextPath);
       router.refresh();
     } catch (err) {
       const code =

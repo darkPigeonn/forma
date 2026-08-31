@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { getClientAuth } from "@/lib/firebase/client";
+import { establishSession } from "@/lib/firebase/session-client";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { ui } from "@/lib/ui-id";
 
@@ -47,15 +48,8 @@ export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }
         password,
       );
       const idToken = await credential.user.getIdToken();
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      if (!res.ok) {
-        throw new Error("session");
-      }
-      router.replace(redirectTo);
+      const nextPath = await establishSession(idToken);
+      router.replace(nextPath === "/dashboard" ? redirectTo : nextPath);
       router.refresh();
     } catch (err) {
       const code =

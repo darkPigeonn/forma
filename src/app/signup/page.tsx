@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { getSessionUser } from "@/lib/firebase/auth";
+import { redirectAuthenticatedUser } from "@/lib/auth/require-ready-user";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { ui } from "@/lib/ui-id";
 
@@ -9,10 +8,7 @@ export const metadata = {
 };
 
 export default async function SignUpPage() {
-  const user = await getSessionUser();
-  if (user) {
-    redirect("/dashboard");
-  }
+  await redirectAuthenticatedUser("/dashboard");
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-12">

@@ -5,6 +5,7 @@ import {
   SESSION_MAX_AGE_MS,
   createSessionCookie,
 } from "@/lib/firebase/auth";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
 import { z } from "zod";
 
 const bodySchema = z.object({
@@ -15,7 +16,8 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     const { idToken } = bodySchema.parse(json);
-    const { sessionCookie, profile } = await createSessionCookie(idToken);
+    const { sessionCookie, profile, emailVerified, signInProvider } =
+      await createSessionCookie(idToken);
 
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE_NAME, sessionCookie, {
@@ -26,8 +28,15 @@ export async function POST(request: Request) {
       maxAge: SESSION_MAX_AGE_MS / 1000,
     });
 
+    const nextPath = resolvePostAuthPath({
+      signInProvider,
+      emailVerified,
+      profile,
+    });
+
     return NextResponse.json({
       ok: true,
+      nextPath,
       user: {
         email: profile.email,
         name: profile.name,

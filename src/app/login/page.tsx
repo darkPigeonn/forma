@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { getSessionUser } from "@/lib/firebase/auth";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
 import { LoginForm } from "@/components/auth/login-form";
 import { ui } from "@/lib/ui-id";
 
@@ -25,7 +26,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   const user = await getSessionUser();
   if (user) {
-    redirect(redirectTo);
+    redirect(
+      resolvePostAuthPath({
+        signInProvider: user.signInProvider,
+        emailVerified: user.emailVerified,
+        profile: user.profile,
+        fallback: redirectTo,
+      }),
+    );
   }
 
   return (

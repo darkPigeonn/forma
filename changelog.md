@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-31 — Verifikasi email & profil saat daftar
+
+- Daftar email/password: kirim email konfirmasi Firebase, lalu arahkan ke `/verify-email`.
+- Setelah verifikasi: form profil di `/complete-profile` (nama wajib, HP opsional).
+- Dasbor & editor formulir diblokir sampai email terverifikasi (akun email) dan profil selesai.
+- Daftar Google: lewati verifikasi email, langsung ke form profil jika belum lengkap.
+- Pengguna lama yang sudah menyelesaikan onboarding tour tidak diminta isi profil ulang.
+
 ## 2026-08-31 — Fitur kolaborator diaktifkan
 
 - `featureFlags.collaborators = true` — undang kolaborator via email, badge di daftar formulir, halaman terima undangan `/invite/[token]`.

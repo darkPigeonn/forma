@@ -5,9 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
-  updateProfile,
+  sendEmailVerification,
 } from "firebase/auth";
 import { getClientAuth } from "@/lib/firebase/client";
+import {
+  establishSession,
+  getEmailVerificationContinueUrl,
+} from "@/lib/firebase/session-client";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { ui } from "@/lib/ui-id";
 
@@ -26,12 +30,10 @@ function mapAuthError(code: string | undefined) {
 
 export function SignUpForm() {
   const router = useRouter();
-  const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
   const errorId = useId();
 
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -49,19 +51,12 @@ export function SignUpForm() {
         email.trim(),
         password,
       );
-      if (name.trim()) {
-        await updateProfile(credential.user, { displayName: name.trim() });
-      }
-      const idToken = await credential.user.getIdToken();
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+      await sendEmailVerification(credential.user, {
+        url: getEmailVerificationContinueUrl(),
       });
-      if (!res.ok) {
-        throw new Error("session");
-      }
-      router.replace("/dashboard");
+      const idToken = await credential.user.getIdToken();
+      const nextPath = await establishSession(idToken);
+      router.replace(nextPath);
       router.refresh();
     } catch (err) {
       const code =
@@ -91,22 +86,6 @@ export function SignUpForm() {
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={nameId} className="text-sm font-medium text-ink">
-            {ui.name}
-          </label>
-          <input
-            id={nameId}
-            name="name"
-            type="text"
-            autoComplete="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="min-h-11 rounded-md border border-border bg-bg-elevated px-3 text-ink"
-            placeholder={ui.yourName}
-          />
-        </div>
-
         <div className="flex flex-col gap-1.5">
           <label htmlFor={emailId} className="text-sm font-medium text-ink">
             {ui.email}

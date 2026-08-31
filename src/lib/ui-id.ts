@@ -57,6 +57,31 @@ export const ui = {
   googleSignInFailed: "Tidak bisa masuk dengan Google. Silakan coba lagi.",
   googleSessionFailed:
     "Berhasil masuk dengan Google, tapi membuat sesi gagal. Periksa konfigurasi Firebase Admin di server.",
+  authEmailNotVerified:
+    "Konfirmasi email Anda terlebih dahulu sebelum melanjutkan.",
+  verifyEmailTitle: "Konfirmasi email Anda",
+  verifyEmailHint:
+    "Kami mengirim tautan konfirmasi ke alamat email Anda. Buka email tersebut dan klik tautannya, lalu kembali ke halaman ini.",
+  verifyEmailSentTo: (email: string) => `Email dikirim ke ${email}`,
+  verifyEmailResend: "Kirim ulang email",
+  verifyEmailResending: "Mengirim…",
+  verifyEmailResent: "Email konfirmasi terkirim. Periksa kotak masuk Anda.",
+  verifyEmailResendFailed:
+    "Tidak bisa mengirim ulang email. Coba lagi dalam beberapa menit.",
+  verifyEmailCheck: "Saya sudah verifikasi",
+  verifyEmailChecking: "Memeriksa…",
+  verifyEmailStillPending:
+    "Email belum terverifikasi. Buka tautan di email Anda, lalu coba lagi.",
+  verifyEmailUseOtherAccount: "Gunakan akun lain",
+  completeProfileTitle: "Lengkapi profil Anda",
+  completeProfileHint:
+    "Isi data berikut agar tim dan kolaborator mengenali Anda di Survei.",
+  phone: "Nomor HP",
+  phoneOptional: "Nomor HP (opsional)",
+  phonePlaceholder: "08xxxxxxxxxx",
+  saveProfile: "Simpan profil",
+  savingProfile: "Menyimpan…",
+  profileSaveFailed: "Tidak bisa menyimpan profil. Silakan coba lagi.",
 
   // Nav / shell
   mainNav: "Utama",

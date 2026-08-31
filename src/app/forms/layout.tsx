@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/firebase/auth";
+import { requireReadyUser } from "@/lib/auth/require-ready-user";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function FormsLayout({
@@ -7,10 +6,7 @@ export default async function FormsLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getSessionUser();
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireReadyUser("/dashboard");
 
   return (
     <AppShell userName={user.name} userEmail={user.email}>
