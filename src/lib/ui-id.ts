@@ -5,7 +5,7 @@ export const ui = {
   skipToContent: "Loncat ke konten",
 
   // Landing
-  landingHeadline: "Ini bukan G-Form, tapi mirip G-Form",
+  landingHeadline: "Permudah pengumpulan data dengan Survei",
   landingSub:
     "Buat formulir, bagikan tautan, kumpulkan jawaban — tanpa ribet.",
   getStarted: "Mulai",
