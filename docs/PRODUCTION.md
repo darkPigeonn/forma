@@ -378,7 +378,7 @@ E2E di CI: set `MONGODB_URI`, `CI=true` (Playwright build + start port 3100).
 - Rate limit fail-open saat Redis down
 - `limitOneResponse` via cookie — bisa di-bypass (clear cookie)
 - Tidak ada pagination daftar respons (lambat jika > ribuan)
-- Collaborator fitur ada tapi `featureFlags.collaborators = false`
+- Collaborator: undang editor via email (`/invite/[token]`); butuh `RESEND_API_KEY` + `EMAIL_FROM` untuk kirim email otomatis
 - Cookie/session masih memakai prefix internal `forma_*` (kompatibilitas; tidak memengaruhi branding UI)
 
 ---

@@ -1,4 +1,4 @@
 /** Toggle in-development product features without removing backend code. */
 export const featureFlags = {
-  collaborators: false,
+  collaborators: true,
 } as const;

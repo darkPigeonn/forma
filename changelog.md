@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-31 — Fitur kolaborator diaktifkan
+
+- `featureFlags.collaborators = true` — undang kolaborator via email, badge di daftar formulir, halaman terima undangan `/invite/[token]`.
+- Email undangan via Resend jika `RESEND_API_KEY` + `EMAIL_FROM` diset; tanpa itu tautan undangan tetap dibuat dan bisa disalin di UI.
+
 ## 2026-08-31 — Docker production
 
 - `Dockerfile` (multi-stage, Next.js standalone), `docker-compose.yml`, `.env.docker.example`, `.dockerignore`.
