@@ -163,7 +163,7 @@ async function main() {
     {
       id: createId(),
       type: "checkboxes",
-      label: "What did you use Forma for?",
+      label: "What did you use Survei for?",
       helpText: "Select all that apply",
       required: false,
       order: 3,
@@ -198,7 +198,7 @@ async function main() {
         slug: SEED_SLUG,
         shortCode: "demo8fmk",
         status: "published",
-        confirmationMessage: "Thanks for trying Forma — your feedback is in.",
+        confirmationMessage: "Thanks for trying Survei — your feedback is in.",
         questions,
         updatedAt: now,
       },

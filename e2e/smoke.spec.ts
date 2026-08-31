@@ -18,7 +18,7 @@ test.describe("public pages", () => {
     const slug = `missing-form-${Date.now()}`;
     await page.goto(`/f/${slug}`);
     await expect(
-      page.getByRole("link", { name: "Kembali ke Forma" }),
+      page.getByRole("link", { name: "Kembali ke Survei" }),
     ).toBeVisible({ timeout: 15_000 });
   });
 });

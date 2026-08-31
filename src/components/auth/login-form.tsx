@@ -138,7 +138,7 @@ export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }
         </button>
 
         <p className="text-sm text-ink-muted">
-          {ui.newToForma}{" "}
+          {ui.newToSurvei}{" "}
           <Link
             href="/signup"
             className="font-medium text-accent underline-offset-2 hover:underline"

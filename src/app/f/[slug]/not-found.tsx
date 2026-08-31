@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <p className="text-ink-muted">{ui.formNotFoundHint}</p>
       <Link href="/" className="font-medium text-accent hover:underline">
-        {ui.backToForma}
+        {ui.backToSurvei}
       </Link>
     </main>
   );

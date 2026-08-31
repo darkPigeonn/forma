@@ -13,7 +13,7 @@ test.describe("public form submit", () => {
     await context.clearCookies();
 
     await page.goto(`/f/${fixture.slug}`);
-    await expect(page.getByRole("heading", { name: "Forma E2E" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Survei E2E" })).toBeVisible();
 
     const answer = `E2E ${Date.now()}`;
     const field = page.getByPlaceholder("Jawaban Anda");

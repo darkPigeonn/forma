@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-31 — Rebrand Forma → Survei
+
+- Nama produk di UI, metadata halaman, email, share card, dan file unduhan QR diganti menjadi **Survei**.
+
 ## 2026-08-31 — Integration & E2E tests
 
 - Integration tests untuk `POST /api/f/[slug]/submit` (mock DB): 404, 403 closed, validasi, unique conflict, sukses + cookie.

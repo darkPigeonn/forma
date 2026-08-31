@@ -1,7 +1,7 @@
 /** UI copy in Bahasa Indonesia */
 
 export const ui = {
-  brand: "Forma",
+  brand: "Survei",
   skipToContent: "Loncat ke konten",
 
   // Landing
@@ -14,7 +14,7 @@ export const ui = {
 
   // Auth
   signInTitle: "Masuk ke akun Anda",
-  signUpTitle: "Buat akun Forma",
+  signUpTitle: "Buat akun Survei",
   continueWithGoogle: "Lanjutkan dengan Google",
   signUpWithGoogle: "Daftar dengan Google",
   or: "atau",
@@ -30,7 +30,7 @@ export const ui = {
   creatingAccount: "Membuat akun…",
   signingIn: "Sedang masuk…",
   connecting: "Menghubungkan…",
-  newToForma: "Baru di Forma?",
+  newToSurvei: "Baru di Survei?",
   createAccount: "Buat akun",
   alreadyHaveAccount: "Sudah punya akun?",
   signOut: "Keluar",
@@ -53,7 +53,7 @@ export const ui = {
   googleProviderDisabled:
     "Masuk Google belum diaktifkan. Aktifkan provider Google di Firebase Authentication.",
   googlePopupFailed:
-    "Jendela Google tidak bisa terhubung. Izinkan pop-up, atau buka Forma lewat localhost.",
+    "Jendela Google tidak bisa terhubung. Izinkan pop-up, atau buka Survei lewat localhost.",
   googleSignInFailed: "Tidak bisa masuk dengan Google. Silakan coba lagi.",
   googleSessionFailed:
     "Berhasil masuk dengan Google, tapi membuat sesi gagal. Periksa konfigurasi Firebase Admin di server.",
@@ -76,8 +76,8 @@ export const ui = {
   onboardingClose: "Tutup panduan",
   onboardingSteps: [
     {
-      title: "Selamat datang di Forma",
-      body: "Forma membantu Anda membuat formulir, membagikan tautan, dan melihat jawaban — tanpa spreadsheet.",
+      title: "Selamat datang di Survei",
+      body: "Survei membantu Anda membuat formulir, membagikan tautan, dan melihat jawaban — tanpa spreadsheet.",
     },
     {
       title: "Buat formulir baru",
@@ -310,7 +310,7 @@ export const ui = {
   headerImageTypeInvalid: "Gunakan JPG, PNG, GIF, atau WebP",
   invalidHeaderImage: "Gambar tidak valid",
   formThemes: {
-    teal: "Teal (Forma)",
+    teal: "Teal (Survei)",
     forest: "Hutan",
     ocean: "Laut",
     sunset: "Senja",
@@ -366,10 +366,10 @@ export const ui = {
   collaboratorInviteAlreadyActive: "Anda sudah menjadi kolaborator formulir ini.",
   collaboratorInviteOpenForm: "Buka formulir",
   collaboratorInviteEmailSubject: (formTitle: string) =>
-    `Undangan mengedit “${formTitle}” di Forma`,
+    `Undangan mengedit “${formTitle}” di Survei`,
   collaboratorInviteEmailGreeting: "Halo,",
   collaboratorInviteEmailIntro: (inviterName: string, formTitle: string) =>
-    `${inviterName} mengundang Anda untuk mengedit formulir “${formTitle}” di Forma.`,
+    `${inviterName} mengundang Anda untuk mengedit formulir “${formTitle}” di Survei.`,
   collaboratorInviteEmailCta: "Terima undangan",
   collaboratorInviteEmailFooter:
     "Jika Anda tidak mengharapkan email ini, abaikan saja.",
@@ -378,7 +378,7 @@ export const ui = {
     formTitle: string;
     inviteUrl: string;
   }) =>
-    `${input.inviterName} mengundang Anda untuk mengedit formulir “${input.formTitle}” di Forma.\n\nTerima undangan: ${input.inviteUrl}`,
+    `${input.inviterName} mengundang Anda untuk mengedit formulir “${input.formTitle}” di Survei.\n\nTerima undangan: ${input.inviteUrl}`,
   collaboratorNoEmailConfigured:
     "Email belum dikonfigurasi — salin tautan undangan di bawah.",
 
@@ -473,7 +473,7 @@ export const ui = {
   createAccountMeta: "Buat akun",
   dashboardMeta: "Dasbor",
   metaDescription: "Buat formulir, bagikan tautan, kumpulkan jawaban.",
-  defaultUserName: "Pengguna Forma",
+  defaultUserName: "Pengguna Survei",
   formCopySuffix: "(salinan)",
   addQuestionBeforePublish: "Tambah minimal satu pertanyaan sebelum menerbitkan.",
   publishedCannotDraft:
@@ -493,7 +493,7 @@ export const ui = {
   formNotFound: "Formulir tidak ditemukan",
   formNotFoundHint:
     "Tautan mungkin salah, atau formulir masih berstatus draf.",
-  backToForma: "Kembali ke Forma",
+  backToSurvei: "Kembali ke Survei",
   pageNotFound: "Halaman tidak ditemukan",
   pageNotFoundHint:
     "Halaman itu tidak ada, atau Anda tidak punya akses.",

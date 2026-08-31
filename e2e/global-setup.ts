@@ -54,7 +54,7 @@ export default async function globalSetup() {
     {
       $set: {
         ownerId: E2E_OWNER_ID,
-        title: "Forma E2E",
+        title: "Survei E2E",
         description: "Fixture for Playwright smoke tests",
         status: "published",
         slug: E2E_SLUG,

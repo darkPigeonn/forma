@@ -24,8 +24,8 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Forma",
-    template: "%s · Forma",
+    default: "Survei",
+    template: "%s · Survei",
   },
   description: ui.metaDescription,
 };

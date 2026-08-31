@@ -53,5 +53,5 @@ export function qrFilenameFromTitle(title: string): string {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 40) || "form";
-  return `forma-qr-${slug}.png`;
+  return `survei-qr-${slug}.png`;
 }

@@ -1,4 +1,4 @@
-# Forma
+# Survei
 
 Google Forms–like app: create forms, share a link, collect answers.
 

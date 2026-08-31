@@ -77,7 +77,7 @@ export function FormShareMenu({
     ctx.font = "28px sans-serif";
     ctx.fillText(url, 120, 480);
     const link = document.createElement("a");
-    link.download = "forma-share.png";
+    link.download = "survei-share.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   }

@@ -12,7 +12,7 @@ export default function NotFound() {
         href="/"
         className="w-fit font-medium text-accent hover:underline"
       >
-        {ui.backToForma}
+        {ui.backToSurvei}
       </Link>
     </main>
   );
