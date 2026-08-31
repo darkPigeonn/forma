@@ -24,6 +24,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   allowedDevOrigins: ["192.168.1.140", "192.168.25.134", "localhost"],
   async headers() {
     const productionOnly: { key: string; value: string }[] =

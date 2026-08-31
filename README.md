@@ -51,6 +51,17 @@ npm run seed
 
 Opens a published demo form at `/f/demo-feedback`.
 
+## Production (Docker)
+
+```bash
+cp .env.docker.example .env.production
+# Edit .env.production (MongoDB, Firebase, S3, Upstash, NEXT_PUBLIC_*)
+
+docker compose up -d --build
+```
+
+Panduan lengkap: [docs/PRODUCTION.md](docs/PRODUCTION.md) (bagian **4b**).
+
 ## MVP status
 
 - [x] Phase 0 — Foundation (Next.js, Mongo, Firebase)
@@ -67,4 +78,5 @@ See `docs/TASKS.md` for details.
 - [Product spec](docs/SPEC.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Design](docs/DESIGN.md)
+- [Production guideline](docs/PRODUCTION.md)
 - [Tasks](docs/TASKS.md)

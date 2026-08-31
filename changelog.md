@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-31 — Docker production
+
+- `Dockerfile` (multi-stage, Next.js standalone), `docker-compose.yml`, `.env.docker.example`, `.dockerignore`.
+- `output: "standalone"` di `next.config.ts`; scripts `npm run docker:build|up|down|logs`.
+- Panduan deploy Docker di `docs/PRODUCTION.md` §4b.
+- Bagian **Production (Docker)** di `README.md`.
+
+## 2026-08-31 — Panduan production
+
+- Dokumen baru `docs/PRODUCTION.md`: env, deploy, keamanan, checklist pre-launch, monitoring, backup, CI/CD.
+
 ## 2026-08-31 — Rebrand Forma → Survei
 
 - Nama produk di UI, metadata halaman, email, share card, dan file unduhan QR diganti menjadi **Survei**.
