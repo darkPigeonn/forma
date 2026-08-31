@@ -2,16 +2,33 @@
 
 import { useEffect, useId, useState, useTransition } from "react";
 import {
+  getCollaboratorEmailStatusAction,
+  getCollaboratorInviteUrlAction,
   inviteCollaboratorAction,
   listCollaboratorsAction,
   removeCollaboratorAction,
+  resendCollaboratorInviteAction,
 } from "@/app/actions/collaborators";
 import type { CollaboratorListItem } from "@/db/queries/collaborators";
+import type { SendCollaboratorInviteResult } from "@/lib/email/send-collaborator-invite";
 import { ui } from "@/lib/ui-id";
 
 type FormCollaboratorsSettingsProps = {
   formId: string;
 };
+
+function inviteNoticeForStatus(
+  status: SendCollaboratorInviteResult["status"],
+): string {
+  switch (status) {
+    case "sent":
+      return ui.collaboratorInvited;
+    case "not_configured":
+      return ui.collaboratorNoEmailConfigured;
+    case "failed":
+      return ui.collaboratorInviteEmailFailed;
+  }
+}
 
 export function FormCollaboratorsSettings({
   formId,
@@ -22,18 +39,25 @@ export function FormCollaboratorsSettings({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [emailConfigured, setEmailConfigured] = useState(true);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const result = await listCollaboratorsAction(formId);
+      const [listResult, emailStatus] = await Promise.all([
+        listCollaboratorsAction(formId),
+        getCollaboratorEmailStatusAction(),
+      ]);
       if (cancelled) return;
-      if (result.ok) {
-        setItems(result.items);
+      if (listResult.ok) {
+        setItems(listResult.items);
       } else {
-        setError(result.error);
+        setError(listResult.error);
+      }
+      if (emailStatus.ok) {
+        setEmailConfigured(emailStatus.configured);
       }
       setLoading(false);
     })();
@@ -41,6 +65,20 @@ export function FormCollaboratorsSettings({
       cancelled = true;
     };
   }, [formId]);
+
+  function showInviteUrl(url: string, status: SendCollaboratorInviteResult["status"]) {
+    setInviteUrl(url);
+    setNotice(inviteNoticeForStatus(status));
+  }
+
+  async function copyInviteUrl(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setNotice(ui.collaboratorInviteCopied);
+    } catch {
+      setError(ui.couldNotCopyLink);
+    }
+  }
 
   function invite() {
     const trimmed = email.trim();
@@ -62,12 +100,39 @@ export function FormCollaboratorsSettings({
         const without = prev.filter((item) => item.id !== result.collaborator.id);
         return [...without, result.collaborator];
       });
+      showInviteUrl(result.inviteUrl, result.emailStatus);
+    });
+  }
+
+  function copyPendingInvite(collaboratorId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await getCollaboratorInviteUrlAction({
+        formId,
+        collaboratorId,
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
       setInviteUrl(result.inviteUrl);
-      setNotice(
-        result.emailSent
-          ? ui.collaboratorInvited
-          : ui.collaboratorNoEmailConfigured,
-      );
+      await copyInviteUrl(result.inviteUrl);
+    });
+  }
+
+  function resendInvite(collaboratorId: string) {
+    setError(null);
+    setNotice(null);
+    startTransition(async () => {
+      const result = await resendCollaboratorInviteAction({
+        formId,
+        collaboratorId,
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      showInviteUrl(result.inviteUrl, result.emailStatus);
     });
   }
 
@@ -89,16 +154,6 @@ export function FormCollaboratorsSettings({
     });
   }
 
-  async function copyInviteUrl() {
-    if (!inviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setNotice(ui.collaboratorInviteCopied);
-    } catch {
-      setError(ui.couldNotCopyLink);
-    }
-  }
-
   return (
     <section className="forma-section space-y-4" aria-labelledby="collaborators-heading">
       <h2
@@ -109,13 +164,22 @@ export function FormCollaboratorsSettings({
       </h2>
       <p className="text-sm text-ink-muted">{ui.collaboratorsHint}</p>
 
+      {!emailConfigured ? (
+        <p className="rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink-muted">
+          {ui.collaboratorNoEmailConfigured}
+        </p>
+      ) : null}
+
       {error ? (
         <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p className="text-sm text-success" aria-live="polite">
+        <p
+          className={`text-sm ${notice === ui.collaboratorInvited ? "text-success" : "text-ink-muted"}`}
+          aria-live="polite"
+        >
           {notice}
         </p>
       ) : null}
@@ -159,7 +223,7 @@ export function FormCollaboratorsSettings({
           </p>
           <button
             type="button"
-            onClick={() => void copyInviteUrl()}
+            onClick={() => void copyInviteUrl(inviteUrl)}
             className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted"
           >
             {ui.copyLink}
@@ -184,7 +248,7 @@ export function FormCollaboratorsSettings({
                   <p className="truncate text-sm text-ink-muted">{item.name}</p>
                 ) : null}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${
                     item.status === "active"
@@ -196,6 +260,30 @@ export function FormCollaboratorsSettings({
                     ? ui.collaboratorActive
                     : ui.collaboratorPending}
                 </span>
+                {item.status === "pending" ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => copyPendingInvite(item.id)}
+                      className="inline-flex min-h-10 items-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted disabled:opacity-60"
+                    >
+                      {ui.collaboratorCopyInviteLink}
+                    </button>
+                    {emailConfigured ? (
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => resendInvite(item.id)}
+                        className="inline-flex min-h-10 items-center rounded-md border border-border px-3 text-sm font-medium hover:border-ink-muted disabled:opacity-60"
+                      >
+                        {isPending
+                          ? ui.collaboratorResendingInvite
+                          : ui.collaboratorResendInvite}
+                      </button>
+                    ) : null}
+                  </>
+                ) : null}
                 <button
                   type="button"
                   disabled={isPending}

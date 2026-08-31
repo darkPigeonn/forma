@@ -11,7 +11,10 @@ import {
   normalizeCollaboratorEmail,
 } from "@/domain/collaborators";
 import { getSiteOrigin } from "@/lib/site-origin";
-import { sendCollaboratorInviteEmail } from "@/lib/email/send-collaborator-invite";
+import {
+  sendCollaboratorInviteEmail,
+  type SendCollaboratorInviteResult,
+} from "@/lib/email/send-collaborator-invite";
 import { ui } from "@/lib/ui-id";
 
 export type CollaboratorListItem = {
@@ -84,10 +87,80 @@ export type InviteCollaboratorResult =
   | {
       ok: true;
       inviteUrl: string;
-      emailSent: boolean;
+      emailStatus: SendCollaboratorInviteResult["status"];
       collaborator: CollaboratorListItem;
     }
   | { ok: false; error: string };
+
+export async function getCollaboratorInviteUrl(input: {
+  formId: string;
+  ownerId: string;
+  collaboratorId: string;
+}): Promise<{ ok: true; inviteUrl: string } | { ok: false; error: string }> {
+  const form = await getOwnedFormDocument(input.formId, input.ownerId);
+  if (!form) {
+    return { ok: false, error: ui.formNotFound };
+  }
+  if (!Types.ObjectId.isValid(input.collaboratorId)) {
+    return { ok: false, error: ui.invalidRequest };
+  }
+
+  await connectDb();
+  const row = await FormCollaborator.findOne({
+    _id: input.collaboratorId,
+    formId: form._id,
+    status: "pending",
+  });
+  if (!row?.inviteToken) {
+    return { ok: false, error: ui.collaboratorInviteNotFound };
+  }
+
+  const origin = await getSiteOrigin();
+  return { ok: true, inviteUrl: `${origin}/invite/${row.inviteToken}` };
+}
+
+export async function resendCollaboratorInvite(input: {
+  formId: string;
+  ownerId: string;
+  ownerName: string;
+  collaboratorId: string;
+}): Promise<
+  | {
+      ok: true;
+      inviteUrl: string;
+      emailStatus: SendCollaboratorInviteResult["status"];
+    }
+  | { ok: false; error: string }
+> {
+  const form = await getOwnedFormDocument(input.formId, input.ownerId);
+  if (!form) {
+    return { ok: false, error: ui.formNotFound };
+  }
+  if (!Types.ObjectId.isValid(input.collaboratorId)) {
+    return { ok: false, error: ui.invalidRequest };
+  }
+
+  await connectDb();
+  const row = await FormCollaborator.findOne({
+    _id: input.collaboratorId,
+    formId: form._id,
+    status: "pending",
+  });
+  if (!row?.inviteToken) {
+    return { ok: false, error: ui.collaboratorInviteNotFound };
+  }
+
+  const origin = await getSiteOrigin();
+  const inviteUrl = `${origin}/invite/${row.inviteToken}`;
+  const emailStatus = await sendCollaboratorInviteEmail({
+    to: row.email,
+    inviteUrl,
+    formTitle: form.title,
+    inviterName: input.ownerName,
+  });
+
+  return { ok: true, inviteUrl, emailStatus: emailStatus.status };
+}
 
 export async function inviteFormCollaborator(input: {
   formId: string;
@@ -151,7 +224,7 @@ export async function inviteFormCollaborator(input: {
 
   const origin = await getSiteOrigin();
   const inviteUrl = `${origin}/invite/${inviteToken}`;
-  const emailSent = await sendCollaboratorInviteEmail({
+  const emailResult = await sendCollaboratorInviteEmail({
     to: email,
     inviteUrl,
     formTitle: form.title,
@@ -161,7 +234,7 @@ export async function inviteFormCollaborator(input: {
   return {
     ok: true,
     inviteUrl,
-    emailSent,
+    emailStatus: emailResult.status,
     collaborator: {
       id: String(doc._id),
       email: doc.email,

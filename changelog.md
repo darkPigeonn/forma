@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-31 — Undangan kolaborator: pesan email lebih jelas
+
+- Bedakan **belum dikonfigurasi** vs **gagal kirim** (Resend/domain) di UI kolaborator.
+- Tombol **Salin tautan** dan **Kirim ulang email** untuk kolaborator berstatus Menunggu.
+- Banner info jika `RESEND_API_KEY` / `EMAIL_FROM` belum diset di server.
+
 ## 2026-08-31 — Verifikasi email & profil saat daftar
 
 - Daftar email/password: kirim email konfirmasi Firebase, lalu arahkan ke `/verify-email`.

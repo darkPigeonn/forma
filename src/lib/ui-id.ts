@@ -406,6 +406,11 @@ export const ui = {
     `${input.inviterName} mengundang Anda untuk mengedit formulir “${input.formTitle}” di Survei.\n\nTerima undangan: ${input.inviteUrl}`,
   collaboratorNoEmailConfigured:
     "Email belum dikonfigurasi — salin tautan undangan di bawah.",
+  collaboratorInviteEmailFailed:
+    "Email gagal terkirim — salin tautan undangan di bawah. Pastikan domain pengirim sudah diverifikasi di Resend.",
+  collaboratorCopyInviteLink: "Salin tautan",
+  collaboratorResendInvite: "Kirim ulang email",
+  collaboratorResendingInvite: "Mengirim…",
 
   // Responses
   responses: "Respons",

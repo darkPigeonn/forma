@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 import {
   acceptCollaboratorInvite,
+  getCollaboratorInviteUrl,
   inviteFormCollaborator,
   listFormCollaborators,
   removeFormCollaborator,
+  resendCollaboratorInvite,
 } from "@/db/queries/collaborators";
+import { isCollaboratorEmailConfigured } from "@/lib/email/send-collaborator-invite";
 import { requireSessionUser } from "@/lib/firebase/auth";
 import {
   acceptInviteSchema,
@@ -35,6 +38,50 @@ export async function listCollaboratorsAction(formId: string) {
   }
 
   return { ok: true as const, items };
+}
+
+export async function getCollaboratorEmailStatusAction() {
+  return { ok: true as const, configured: isCollaboratorEmailConfigured() };
+}
+
+export async function getCollaboratorInviteUrlAction(input: {
+  formId: string;
+  collaboratorId: string;
+}) {
+  const user = await requireUser();
+  if (!user) {
+    return { ok: false as const, error: ui.signInRequired };
+  }
+
+  return getCollaboratorInviteUrl({
+    formId: input.formId,
+    ownerId: user.uid,
+    collaboratorId: input.collaboratorId,
+  });
+}
+
+export async function resendCollaboratorInviteAction(input: {
+  formId: string;
+  collaboratorId: string;
+}) {
+  const user = await requireUser();
+  if (!user) {
+    return { ok: false as const, error: ui.signInRequired };
+  }
+
+  const result = await resendCollaboratorInvite({
+    formId: input.formId,
+    ownerId: user.uid,
+    ownerName: user.name,
+    collaboratorId: input.collaboratorId,
+  });
+
+  if (!result.ok) {
+    return result;
+  }
+
+  revalidatePath(`/forms/${input.formId}`);
+  return result;
 }
 
 export async function inviteCollaboratorAction(input: unknown) {

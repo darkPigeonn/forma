@@ -7,9 +7,20 @@ type SendInviteInput = {
   inviterName: string;
 };
 
+export type SendCollaboratorInviteResult =
+  | { status: "sent" }
+  | { status: "not_configured" }
+  | { status: "failed"; detail?: string };
+
+export function isCollaboratorEmailConfigured(): boolean {
+  return Boolean(
+    process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim(),
+  );
+}
+
 export async function sendCollaboratorInviteEmail(
   input: SendInviteInput,
-): Promise<boolean> {
+): Promise<SendCollaboratorInviteResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.EMAIL_FROM?.trim();
 
@@ -34,7 +45,7 @@ export async function sendCollaboratorInviteEmail(
       "[collaborator-invite] Email not configured (set RESEND_API_KEY + EMAIL_FROM). Invite URL:",
       input.inviteUrl,
     );
-    return false;
+    return { status: "not_configured" };
   }
 
   try {
@@ -56,12 +67,19 @@ export async function sendCollaboratorInviteEmail(
     if (!response.ok) {
       const body = await response.text();
       console.error("Resend API error:", response.status, body);
-      return false;
+      let detail: string | undefined;
+      try {
+        const parsed = JSON.parse(body) as { message?: string };
+        detail = parsed.message;
+      } catch {
+        detail = undefined;
+      }
+      return { status: "failed", detail };
     }
 
-    return true;
+    return { status: "sent" };
   } catch (error) {
     console.error("Failed to send collaborator invite email:", error);
-    return false;
+    return { status: "failed" };
   }
 }
