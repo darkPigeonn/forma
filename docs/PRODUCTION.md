@@ -63,8 +63,8 @@ Salin dari [`.env.example`](../.env.example). **Jangan** commit `.env.local` ata
 |----------|---------|
 | `AWS_S3_PREFIX` | Prefix key, mis. `survei_keuskupan/` |
 | `DOCUMENT_STORAGE_ENDPOINT` | MinIO / S3-compatible |
-| `RESEND_API_KEY` | Undangan kolaborator (fitur flag off di MVP) |
-| `EMAIL_FROM` | `Survei <noreply@domainanda.com>` |
+| `RESEND_API_KEY` | Undangan kolaborator — **wajib di server production** (bukan `.env.local` dev) |
+| `EMAIL_FROM` | `"Survei <noreply@domainanda.com>"` — pakai tanda kutip jika ada spasi/`>` |
 
 ### Firebase Console
 
@@ -153,7 +153,9 @@ nano .env.production   # atau editor lain
 ```
 
 - `NEXT_PUBLIC_*` dipakai saat **build** image (client bundle)
-- `MONGODB_URI`, `FIREBASE_*`, `AWS_*`, `UPSTASH_*` hanya **runtime** (container)
+- `MONGODB_URI`, `FIREBASE_*`, `AWS_*`, `UPSTASH_*`, `RESEND_*`, `EMAIL_FROM` hanya **runtime** (container)
+
+> **Penting:** File `.env.local` di laptop **tidak** ikut ke server. Untuk Docker, isi `RESEND_API_KEY` dan `EMAIL_FROM` di **`.env.production` pada server**, lalu recreate container (lihat di bawah).
 
 **2. Build & jalankan**
 
@@ -223,6 +225,8 @@ Compose ini **hanya** menjalankan app Next.js. Gunakan layanan terpisah:
 | Firebase `invalid private key` | Escape `\n` di `FIREBASE_PRIVATE_KEY` |
 | Google login gagal | Tambah domain production di Firebase Authorized domains |
 | Upload file gagal | Set `AWS_*` atau Firebase Storage bucket |
+| Kolaborator: “Email belum dikonfigurasi” | Tambah `RESEND_API_KEY` + `EMAIL_FROM` di **`.env.production` server** (bukan `.env.local`), lalu `docker compose --env-file .env.production up -d` — **rebuild tidak wajib** |
+| Cek env di container | `docker compose exec survei node -e "console.log('resend', !!process.env.RESEND_API_KEY, 'from', process.env.EMAIL_FROM)"` |
 
 ### Resource minimum
 

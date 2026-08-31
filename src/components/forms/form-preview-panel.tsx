@@ -43,6 +43,7 @@ export function FormPreviewPanel({
             description={description}
             questions={questions}
             sections={sections}
+            interactive
           />
         </div>
       </div>

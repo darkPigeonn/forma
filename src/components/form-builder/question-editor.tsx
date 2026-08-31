@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/form-constants";
 import { applyQuestionType } from "@/domain/forms";
@@ -56,6 +56,9 @@ export function QuestionEditor({
   const showOptions = isChoiceQuestionType(question.type);
   const showRangeSettings = question.type === "range";
   const rangeOptions = getRangeOptions(question);
+  const [rangePreviewValue, setRangePreviewValue] = useState<number | null>(
+    null,
+  );
 
   return (
     <article
@@ -241,11 +244,10 @@ export function QuestionEditor({
                   />
                 </label>
               </div>
-              <RangeQuestionInput
+              <RangeQuestionBuilderPreview
                 question={question}
-                value={null}
-                disabled
-                onChange={() => {}}
+                value={rangePreviewValue}
+                onChange={setRangePreviewValue}
               />
             </div>
           ) : null}
@@ -407,6 +409,32 @@ export function QuestionEditor({
   );
 }
 
+function RangeQuestionBuilderPreview({
+  question,
+  value,
+  onChange,
+  disabled = false,
+}: {
+  question: QuestionInput;
+  value: number | null;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
+      <RangeQuestionInput
+        question={question}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
 function DisabledAnswerPreview({ question }: { question: QuestionInput }) {
   const fieldClass =
     "w-full rounded-md border border-border bg-bg-elevated px-3 text-ink-muted";
@@ -453,11 +481,11 @@ function DisabledAnswerPreview({ question }: { question: QuestionInput }) {
 
   if (question.type === "range") {
     return (
-      <RangeQuestionInput
+      <RangeQuestionBuilderPreview
         question={question}
         value={null}
-        disabled
         onChange={() => {}}
+        disabled
       />
     );
   }

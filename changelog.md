@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-01 — Perbaikan klik angka pertanyaan rentang
+
+- Preview rentang di builder dan tab Pratinjau sekarang bisa diklik (sebelumnya `disabled`).
+- Angka skala di editor pertanyaan rentang bisa dipilih untuk uji tampilan.
+
+## 2026-08-31 — Dokumentasi env email production (Docker)
+
+- `.env.docker.example`: `RESEND_API_KEY` + `EMAIL_FROM` tidak lagi di-comment; contoh `EMAIL_FROM` dengan tanda kutip.
+- `docs/PRODUCTION.md`: penjelasan `.env.local` ≠ `.env.production`, troubleshooting kolaborator email, perintah cek env di container.
+
 ## 2026-08-31 — Undangan kolaborator: pesan email lebih jelas
 
 - Bedakan **belum dikonfigurasi** vs **gagal kirim** (Resend/domain) di UI kolaborator.
