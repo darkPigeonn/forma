@@ -160,6 +160,55 @@ select:not([multiple]):focus-visible {
   outline-offset: 2px;
 }
 
+/* Range scale — large thumb for touch devices */
+.forma-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-border);
+  accent-color: var(--color-accent);
+}
+
+.forma-range:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.forma-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-top: -1.125rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg-elevated);
+  box-shadow: 0 1px 4px rgba(28, 25, 23, 0.2);
+  cursor: pointer;
+}
+
+.forma-range::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-border);
+}
+
+.forma-range::-moz-range-thumb {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg-elevated);
+  box-shadow: 0 1px 4px rgba(28, 25, 23, 0.2);
+  cursor: pointer;
+}
+
+.forma-range::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-border);
+}
+
 @media print {
   body * {
     visibility: hidden;

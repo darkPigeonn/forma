@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-01 — UX rentang di mobile
+
+- Pertanyaan rentang di layar kecil memakai slider dengan thumb 44px dan angka terpilih besar.
+- Di desktop, tombol angka dibungkus (wrap) ukuran 44×44px, bukan satu baris sempit.
+
 ## 2026-09-01 — Perbaikan build Docker (TypeScript)
 
 - `revalidateTag` Next.js 16 wajib argumen kedua (`'max'`); Server Actions pakai `updateTag` untuk invalidasi cache form publik.
