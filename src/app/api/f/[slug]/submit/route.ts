@@ -4,8 +4,13 @@ import { getPublicFormBySlug } from "@/db/queries/public-forms";
 import {
   createFormResponse,
   hasResponseForRespondent,
+  hasResponseForRespondentEmail,
   hasResponseForUniqueKey,
 } from "@/db/queries/responses";
+import {
+  isGoogleRespondent,
+  verifyRespondentIdToken,
+} from "@/lib/firebase/verify-respondent";
 import { uniqueKeyFromAnswers } from "@/domain/unique-key";
 import {
   createRespondentToken,
@@ -155,6 +160,31 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
   }
 
+  let respondentEmail: string | undefined;
+  let respondentUid: string | undefined;
+
+  if (form.collectRespondentEmail) {
+    const token = parsed.data.respondentIdToken?.trim();
+    if (token) {
+      const respondent = await verifyRespondentIdToken(token);
+      if (respondent && isGoogleRespondent(respondent)) {
+        if (await hasResponseForRespondentEmail(form.id, respondent.email)) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: ui.alreadySubmittedBody,
+              alreadySubmitted: true,
+            },
+            { status: 409 },
+          );
+        }
+
+        respondentEmail = respondent.email;
+        respondentUid = respondent.uid;
+      }
+    }
+  }
+
   const cookieName = respondentCookieName(form.id);
   let respondentToken = request.cookies.get(cookieName)?.value;
   let respondentKey: string | undefined;
@@ -187,6 +217,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       ipHash: hashIp(ip),
       respondentKey,
       uniqueKey: uniqueResult.key ?? undefined,
+      respondentEmail,
+      respondentUid,
     });
   } catch (error) {
     if (isDuplicateKeyError(error)) {

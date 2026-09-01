@@ -42,5 +42,6 @@ export const updateFormMetaSchema = z.object({
   confirmationMessage: z.string().trim().min(1).max(1000).optional(),
   themeId: z.enum(FORM_THEME_IDS).optional(),
   limitOneResponse: z.boolean().optional(),
+  collectRespondentEmail: z.boolean().optional(),
   uniqueBy: z.enum(UNIQUE_BY_MODES).optional(),
 });

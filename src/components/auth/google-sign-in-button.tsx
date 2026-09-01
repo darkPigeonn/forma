@@ -42,6 +42,9 @@ type GoogleSignInButtonProps = {
   disabled?: boolean;
   redirectTo?: string;
   onError?: (message: string) => void;
+  /** When true, only signs in with Firebase client — no creator session cookie. */
+  skipServerSession?: boolean;
+  onSignedIn?: (input: { email: string; idToken: string }) => void | Promise<void>;
 };
 
 export function GoogleSignInButton({
@@ -49,6 +52,8 @@ export function GoogleSignInButton({
   disabled = false,
   redirectTo = "/dashboard",
   onError,
+  skipServerSession = false,
+  onSignedIn,
 }: GoogleSignInButtonProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -66,6 +71,15 @@ export function GoogleSignInButton({
         browserPopupRedirectResolver,
       );
       const idToken = await credential.user.getIdToken();
+      if (skipServerSession) {
+        const email = credential.user.email?.trim();
+        if (!email) {
+          onError?.(ui.respondentGoogleRequired);
+          return;
+        }
+        await onSignedIn?.({ email, idToken });
+        return;
+      }
       const nextPath = await establishSession(idToken);
       router.replace(nextPath === "/dashboard" ? redirectTo : nextPath);
       router.refresh();

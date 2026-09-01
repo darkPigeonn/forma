@@ -22,6 +22,8 @@ const responseSchema = new Schema(
       ipHash: String,
       respondentKey: String,
       uniqueKey: String,
+      respondentEmail: String,
+      respondentUid: String,
     },
     answers: { type: [answerSchema], default: [] },
   },
@@ -35,6 +37,10 @@ responseSchema.index(
 );
 responseSchema.index(
   { formId: 1, "meta.uniqueKey": 1 },
+  { unique: true, sparse: true },
+);
+responseSchema.index(
+  { formId: 1, "meta.respondentEmail": 1 },
   { unique: true, sparse: true },
 );
 

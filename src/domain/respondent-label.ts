@@ -7,6 +7,7 @@ import type { QuestionInput } from "@/lib/validators/question";
 type SubmissionLike = {
   id: string;
   submittedAt: string;
+  respondentEmail?: string;
   answers: Array<{ questionId: string; value: AnswerValue }>;
 };
 
@@ -26,8 +27,8 @@ export function buildRespondentLabels(
       submission.answers.map((answer) => [answer.questionId, answer.value] as const),
     );
 
-    let label = "";
-    if (fields.name) {
+    let label = submission.respondentEmail?.trim() ?? "";
+    if (!label && fields.name) {
       label = answerToText(byId.get(fields.name.id) ?? null).trim();
     }
     if (!label && fields.contact) {

@@ -62,6 +62,7 @@ export type FormDetail = FormListItem & {
   confirmationMessage: string;
   themeId: FormThemeId;
   limitOneResponse: boolean;
+  collectRespondentEmail: boolean;
   uniqueBy: UniqueByMode;
   uniqueQuestionId: string | null;
   headerImage: FormHeaderImageMeta | null;
@@ -175,6 +176,7 @@ function toDetail(
       doc.confirmationMessage ?? ui.defaultConfirmation,
     themeId: isFormThemeId(doc.themeId) ? doc.themeId : DEFAULT_FORM_THEME_ID,
     limitOneResponse: Boolean(doc.limitOneResponse),
+    collectRespondentEmail: Boolean(doc.collectRespondentEmail),
     uniqueBy:
       doc.uniqueBy === "phone" || doc.uniqueBy === "email"
         ? doc.uniqueBy
@@ -344,6 +346,7 @@ export async function updateOwnedFormMeta(
     confirmationMessage?: string;
     themeId?: FormThemeId;
     limitOneResponse?: boolean;
+    collectRespondentEmail?: boolean;
     uniqueBy?: UniqueByMode;
   },
 ): Promise<FormDetail | null> {
@@ -357,6 +360,9 @@ export async function updateOwnedFormMeta(
   if (patch.themeId !== undefined) form.themeId = patch.themeId;
   if (patch.limitOneResponse !== undefined) {
     form.limitOneResponse = patch.limitOneResponse;
+  }
+  if (patch.collectRespondentEmail !== undefined) {
+    form.collectRespondentEmail = patch.collectRespondentEmail;
   }
   if (patch.uniqueBy !== undefined) {
     form.uniqueBy = patch.uniqueBy;
@@ -445,6 +451,7 @@ export async function duplicateOwnedForm(
       ? source.themeId
       : DEFAULT_FORM_THEME_ID,
     limitOneResponse: Boolean(source.limitOneResponse),
+    collectRespondentEmail: Boolean(source.collectRespondentEmail),
     uniqueBy:
       source.uniqueBy === "phone" || source.uniqueBy === "email"
         ? source.uniqueBy

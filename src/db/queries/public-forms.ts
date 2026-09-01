@@ -30,6 +30,7 @@ export type PublicFormView = {
   confirmationMessage: string;
   themeId: FormThemeId;
   limitOneResponse: boolean;
+  collectRespondentEmail: boolean;
   uniqueBy: UniqueByMode;
   uniqueQuestionId: string | null;
   headerImage: FormHeaderImageMeta | null;
@@ -107,6 +108,7 @@ export async function getPublicFormBySlug(
       sections: 1,
       themeId: 1,
       limitOneResponse: 1,
+      collectRespondentEmail: 1,
       uniqueBy: 1,
       uniqueQuestionId: 1,
       headerImage: 1,
@@ -131,6 +133,7 @@ export async function getPublicFormBySlug(
       form.confirmationMessage ?? ui.defaultConfirmation,
     themeId: isFormThemeId(form.themeId) ? form.themeId : DEFAULT_FORM_THEME_ID,
     limitOneResponse: Boolean(form.limitOneResponse),
+    collectRespondentEmail: Boolean(form.collectRespondentEmail),
     uniqueBy: isUniqueByMode(form.uniqueBy) ? form.uniqueBy : "browser",
     uniqueQuestionId: form.uniqueQuestionId ?? null,
     headerImage: await resolveFormHeaderImage(form.headerImage),

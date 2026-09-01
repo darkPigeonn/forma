@@ -350,6 +350,20 @@ export const ui = {
   limitOneResponse: "Batasi 1 respons per orang",
   limitOneResponseHint:
     "Di browser yang sama, seseorang hanya bisa mengirim sekali. Menghapus cookie atau memakai perangkat lain tetap bisa mengirim lagi.",
+  collectRespondentEmail: "Kumpulkan alamat email (Google)",
+  collectRespondentEmailHint:
+    "Jika responden sudah masuk Google di Chrome, email Gmail-nya terdeteksi otomatis (tanpa halaman login) dan ditampilkan di atas formulir. Tanpa deteksi, formulir tetap bisa diisi.",
+  respondentDetectingEmail: "Mendeteksi akun Google di browser…",
+  respondentHideEmail: "Sembunyikan",
+  respondentSignInTitle: "Masuk untuk mengisi formulir",
+  respondentSignInHint:
+    "Pembuat formulir meminta Anda masuk dengan Google agar alamat email tercatat.",
+  respondentSignInWithGoogle: "Lanjutkan dengan Google",
+  respondentSignInRequired: "Masuk dengan Google untuk mengirim respons.",
+  respondentGoogleRequired: "Gunakan akun Google yang valid untuk mengisi formulir ini.",
+  respondentCheckingAccount: "Memeriksa akun Google…",
+  respondentFillingAs: (email: string) => `Mengisi sebagai ${email}`,
+  respondentSwitchAccount: "Ganti akun",
   alreadySubmitted: "Anda sudah mengirim respons",
   alreadySubmittedBody:
     "Formulir ini hanya menerima satu respons dari browser ini.",

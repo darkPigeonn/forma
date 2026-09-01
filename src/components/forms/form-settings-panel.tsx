@@ -36,6 +36,9 @@ export function FormSettingsPanel({ form }: FormSettingsProps) {
   const [limitOneResponse, setLimitOneResponse] = useState(
     Boolean(form.limitOneResponse),
   );
+  const [collectRespondentEmail, setCollectRespondentEmail] = useState(
+    Boolean(form.collectRespondentEmail),
+  );
   const [uniqueBy, setUniqueBy] = useState<UniqueByMode>(
     form.uniqueBy ?? "browser",
   );
@@ -48,6 +51,7 @@ export function FormSettingsPanel({ form }: FormSettingsProps) {
     confirmationMessage: form.confirmationMessage,
     themeId: form.themeId ?? DEFAULT_FORM_THEME_ID,
     limitOneResponse: Boolean(form.limitOneResponse),
+    collectRespondentEmail: Boolean(form.collectRespondentEmail),
     uniqueBy: form.uniqueBy ?? "browser",
     headerImage: form.headerImage,
   });
@@ -56,6 +60,7 @@ export function FormSettingsPanel({ form }: FormSettingsProps) {
     confirmationMessage: form.confirmationMessage,
     themeId: form.themeId ?? DEFAULT_FORM_THEME_ID,
     limitOneResponse: Boolean(form.limitOneResponse),
+    collectRespondentEmail: Boolean(form.collectRespondentEmail),
     uniqueBy: form.uniqueBy ?? "browser",
     headerImage: form.headerImage,
   };
@@ -64,6 +69,8 @@ export function FormSettingsPanel({ form }: FormSettingsProps) {
     formSnapshot.confirmationMessage !== prevFormSnapshot.confirmationMessage ||
     formSnapshot.themeId !== prevFormSnapshot.themeId ||
     formSnapshot.limitOneResponse !== prevFormSnapshot.limitOneResponse ||
+    formSnapshot.collectRespondentEmail !==
+      prevFormSnapshot.collectRespondentEmail ||
     formSnapshot.uniqueBy !== prevFormSnapshot.uniqueBy ||
     formSnapshot.headerImage !== prevFormSnapshot.headerImage
   ) {
@@ -71,6 +78,7 @@ export function FormSettingsPanel({ form }: FormSettingsProps) {
     setConfirmationMessage(formSnapshot.confirmationMessage);
     setThemeId(formSnapshot.themeId);
     setLimitOneResponse(formSnapshot.limitOneResponse);
+    setCollectRespondentEmail(formSnapshot.collectRespondentEmail);
     setUniqueBy(formSnapshot.uniqueBy);
   }
 
@@ -233,6 +241,41 @@ export function FormSettingsPanel({ form }: FormSettingsProps) {
             {ui.limitOneResponse}
             <span className="mt-1 block font-normal text-ink-muted">
               {ui.limitOneResponseHint}
+            </span>
+          </span>
+        </label>
+        <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={collectRespondentEmail}
+            disabled={isPending}
+            onChange={(event) => {
+              const next = event.target.checked;
+              setCollectRespondentEmail(next);
+              setError(null);
+              setSaveState("saving");
+              startTransition(async () => {
+                const result = await updateFormMetaAction({
+                  formId: form.id,
+                  collectRespondentEmail: next,
+                });
+                if (!result.ok) {
+                  setError(result.error);
+                  setCollectRespondentEmail(Boolean(form.collectRespondentEmail));
+                  setSaveState("idle");
+                  return;
+                }
+                setSaveState("saved");
+                router.refresh();
+                window.setTimeout(() => setSaveState("idle"), 1500);
+              });
+            }}
+            className="mt-1 size-4 accent-[var(--color-accent)]"
+          />
+          <span>
+            {ui.collectRespondentEmail}
+            <span className="mt-1 block font-normal text-ink-muted">
+              {ui.collectRespondentEmailHint}
             </span>
           </span>
         </label>

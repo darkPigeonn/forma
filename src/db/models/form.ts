@@ -96,6 +96,8 @@ const formSchema = new Schema(
     },
     /** When true, the same browser may submit only once (cookie + respondent key). */
     limitOneResponse: { type: Boolean, default: false },
+    /** When true, respondents sign in with Google and their email is stored on each response. */
+    collectRespondentEmail: { type: Boolean, default: false },
     uniqueBy: {
       type: String,
       enum: ["browser", "phone", "email"],

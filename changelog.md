@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-01 — Email responden tanpa login (deteksi browser)
+
+- Kumpulkan email Google: tidak ada halaman login — deteksi otomatis dari sesi Firebase di browser + Google One Tap (Chrome).
+- Formulir tetap bisa diisi jika email tidak terdeteksi; email disimpan bila tersedia.
+- Env opsional: `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Web client ID dari Firebase Console).
+
+## 2026-09-01 — Kumpulkan email responden (Google)
+
+- Pengaturan formulir: **Kumpulkan alamat email (Google)** — responden masuk dengan Google sebelum mengisi; email tampil di atas formulir (seperti Google Form) dan disimpan di meta respons.
+- Satu akun Google hanya bisa mengirim sekali per formulir dengan opsi ini aktif.
+
 ## 2026-09-01 — Perbaikan klik angka pertanyaan rentang
 
 - Preview rentang di builder dan tab Pratinjau sekarang bisa diklik (sebelumnya `disabled`).

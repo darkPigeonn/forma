@@ -159,6 +159,18 @@ export async function hasResponseForUniqueKey(
   return Boolean(found);
 }
 
+export async function hasResponseForRespondentEmail(
+  formId: string,
+  respondentEmail: string,
+) {
+  await connectDb();
+  const found = await Response.exists({
+    formId: new Types.ObjectId(formId),
+    "meta.respondentEmail": respondentEmail.trim().toLowerCase(),
+  });
+  return Boolean(found);
+}
+
 export async function createFormResponse(input: {
   formId: string;
   answers: AnswerInput[];
@@ -166,6 +178,8 @@ export async function createFormResponse(input: {
   ipHash?: string;
   respondentKey?: string;
   uniqueKey?: string;
+  respondentEmail?: string;
+  respondentUid?: string;
 }): Promise<{ id: string; submittedAt: string }> {
   await connectDb();
 
@@ -177,6 +191,8 @@ export async function createFormResponse(input: {
       ipHash: input.ipHash,
       respondentKey: input.respondentKey,
       uniqueKey: input.uniqueKey,
+      respondentEmail: input.respondentEmail?.trim().toLowerCase(),
+      respondentUid: input.respondentUid,
     },
     answers: input.answers.map((a) => ({
       questionId: a.questionId,
@@ -226,6 +242,10 @@ export async function getAccessibleFormResponsesBundle(
     docs.map((doc) => ({
       id: String(doc._id),
       submittedAt: new Date(doc.submittedAt).toISOString(),
+      respondentEmail:
+        typeof doc.meta?.respondentEmail === "string"
+          ? doc.meta.respondentEmail
+          : undefined,
       answers: (doc.answers ?? []).map((a) => ({
         questionId: a.questionId,
         value: asAnswerValue(a.value),

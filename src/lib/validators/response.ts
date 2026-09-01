@@ -31,4 +31,5 @@ export const submitAnswersSchema = z.object({
       }),
     )
     .default([]),
+  respondentIdToken: z.string().min(1).optional(),
 });

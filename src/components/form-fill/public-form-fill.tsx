@@ -15,6 +15,10 @@ import type { QuestionInput } from "@/lib/validators/question";
 import { isChoiceQuestionType } from "@/lib/validators/question";
 import { RangeQuestionInput } from "@/components/form-fill/range-question-input";
 import { FormQuestionCard } from "@/components/form-fill/form-question-card";
+import {
+  RespondentEmailBanner,
+} from "@/components/form-fill/respondent-email-auth";
+import { useRespondentBrowserEmail } from "@/components/form-fill/use-respondent-browser-email";
 import { formFillTypography } from "@/components/form-fill/form-fill-typography";
 import { normalizeRangeValue } from "@/lib/range-question";
 import { formatDateTime } from "@/lib/format-date";
@@ -92,10 +96,22 @@ export function PublicFormFill({
     id: string;
     submittedAt: string;
   } | null>(null);
+  const {
+    respondentAuth,
+    alreadySubmitted: alreadySubmittedByEmail,
+    detecting: detectingRespondentEmail,
+    clearRespondentEmail,
+  } = useRespondentBrowserEmail(form.slug, form.collectRespondentEmail);
   const statusId = useId();
   const firstFieldRef = useRef<HTMLElement | null>(null);
 
   const skipPageScroll = useRef(true);
+
+  useEffect(() => {
+    if (!alreadySubmittedByEmail || done) return;
+    setRepeatVisit(true);
+    setDone(true);
+  }, [alreadySubmittedByEmail, done]);
 
   useEffect(() => {
     if (form.status !== "published" || done) return;
@@ -249,6 +265,15 @@ export function PublicFormFill({
 
     setPending(true);
     try {
+      let respondentIdToken: string | undefined;
+      if (form.collectRespondentEmail && respondentAuth) {
+        try {
+          respondentIdToken = await respondentAuth.getIdToken();
+        } catch {
+          // Submit without email if token refresh fails.
+        }
+      }
+
       const answers = questions.map((q) => ({
         questionId: q.id,
         value: values[q.id] ?? null,
@@ -257,7 +282,7 @@ export function PublicFormFill({
       const res = await fetch(`/api/f/${form.slug}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, respondentIdToken }),
       });
 
       const data = (await res.json()) as {
@@ -382,6 +407,15 @@ export function PublicFormFill({
           </p>
         ) : null}
       </div>
+
+      {form.collectRespondentEmail ? (
+        <RespondentEmailBanner
+          email={respondentAuth?.email}
+          detecting={detectingRespondentEmail}
+          pending={pending}
+          onDismiss={() => void clearRespondentEmail()}
+        />
+      ) : null}
 
       {multiPage ? (
         <div className="space-y-2">
