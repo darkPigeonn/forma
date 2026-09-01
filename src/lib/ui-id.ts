@@ -461,7 +461,14 @@ export const ui = {
   analysisAiGenerating: "AI sedang menyusun laporan analisis…",
   analysisAiGenerate: "Buat wawasan AI",
   analysisAiGenerateHint:
-    "Klik untuk menghasilkan laporan analisis lengkap dari respons terkumpul.",
+    "Tulis instruksi analisis, lalu hasilkan laporan dari respons terkumpul.",
+  analysisAiPromptLabel: "Instruksi analisis",
+  analysisAiPromptSummary: "Instruksi analisis AI",
+  analysisAiPromptHint:
+    "Instruksi ini menjadi prompt utama — jelaskan cara membaca data, segment, dan struktur laporan yang diinginkan.",
+  analysisAiPromptPlaceholder:
+    "Bantu saya membaca hasil survey ini dengan sistematik dan sesuai data yg kami kumpulkan ini. Segment: 1–4 rendah, 5–7 cukup, 8–10 baik. Bagian 3–5: rangkum jawaban dominan di 3 pertanyaan lain per segment…",
+  analysisAiPromptRequired: "Isi instruksi analisis terlebih dahulu (min. 20 karakter).",
   analysisAiRegenerate: "Buat ulang wawasan",
   analysisAiRegenerationsLeft: (n: number) =>
     `Sisa ${n} kali buat ulang`,

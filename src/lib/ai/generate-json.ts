@@ -18,6 +18,44 @@ function extractJsonObject(text: string): string {
   return trimmed;
 }
 
+function openAiUsesMaxCompletionTokens(model: string): boolean {
+  const id = model.toLowerCase();
+  return (
+    id.startsWith("o1") ||
+    id.startsWith("o3") ||
+    id.startsWith("o4") ||
+    id.startsWith("gpt-5")
+  );
+}
+
+function buildOpenAiRequestBody(
+  model: string,
+  options: GenerateOptions,
+  asJson: boolean,
+): Record<string, unknown> {
+  const tokenLimit = options.maxTokens ?? (asJson ? 4096 : 12000);
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: options.systemPrompt },
+      { role: "user", content: options.userPrompt },
+    ],
+  };
+
+  if (openAiUsesMaxCompletionTokens(model)) {
+    body.max_completion_tokens = tokenLimit;
+  } else {
+    body.temperature = 0.4;
+    body.max_tokens = tokenLimit;
+  }
+
+  if (asJson) {
+    body.response_format = { type: "json_object" };
+  }
+
+  return body;
+}
+
 async function generateWithOpenAI(
   apiKey: string,
   model: string,
@@ -30,16 +68,7 @@ async function generateWithOpenAI(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model,
-      temperature: 0.4,
-      max_tokens: options.maxTokens ?? (asJson ? 4096 : 12000),
-      ...(asJson ? { response_format: { type: "json_object" } } : {}),
-      messages: [
-        { role: "system", content: options.systemPrompt },
-        { role: "user", content: options.userPrompt },
-      ],
-    }),
+    body: JSON.stringify(buildOpenAiRequestBody(model, options, asJson)),
   });
 
   if (!response.ok) {

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-01 — Prompt wawasan AI dari input pengguna
+
+- Prompt hardcoded dihapus; instruksi analisis sepenuhnya dari textarea pengguna (wajib, maks. 4000 karakter).
+- Form instruksi bisa di-collapse (`<details>`); placeholder berisi contoh instruksi.
+
+## 2026-09-01 — Prompt wawasan AI: segment rendah/cukup/baik
+
+- Segment: 1–4 rendah, 5–7 cukup, 8–10 baik.
+- Bagian 3–5 merangkum jawaban dominan di 3 pertanyaan lain per kelompok segment.
+
+## 2026-09-01 — Perbaikan OpenAI model gpt-5 / o-series
+
+- API memakai `max_completion_tokens` (bukan `max_tokens`) untuk model `gpt-5*` dan `o*`.
+
+## 2026-09-01 — Konteks tambahan saat generate wawasan AI
+
+- Field teks opsional sebelum **Buat wawasan AI** / **Buat ulang** untuk memandu fokus laporan (maks. 2000 karakter).
+
 ## 2026-09-01 — Kartu Wawasan AI full width
 
 - Panel dan isi laporan AI memakai lebar penuh; tabel memanfaatkan ruang horizontal.

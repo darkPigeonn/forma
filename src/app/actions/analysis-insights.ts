@@ -23,6 +23,7 @@ import { z } from "zod";
 const inputSchema = z.object({
   formId: z.string().min(1),
   force: z.boolean().optional(),
+  prompt: z.string().trim().min(20).max(4000),
 });
 
 export type AnalysisInsightsActionResult =
@@ -130,7 +131,7 @@ export async function getAnalysisInsightsAction(
     return { ok: false, code: "failed", error: ui.invalidRequest };
   }
 
-  const { formId, force = false } = parsed.data;
+  const { formId, force = false, prompt } = parsed.data;
 
   const form = await getAccessibleFormDetail(formId, user.uid, user.email);
   if (!form) {
@@ -191,6 +192,7 @@ export async function getAnalysisInsightsAction(
     questions: form.questions,
     submissions: bundle.submissions,
     analytics: bundle.analytics,
+    prompt,
   });
 
   if (!insights) {

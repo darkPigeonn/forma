@@ -14,8 +14,8 @@ export type SegmentDefinition = {
 
 export const DEFAULT_PARTICIPATION_SEGMENTS: SegmentDefinition[] = [
   { id: "low", label: "Rendah (nilai 1–4)", min: 1, max: 4 },
-  { id: "mid", label: "Menengah (nilai 5–7)", min: 5, max: 7 },
-  { id: "high", label: "Tinggi (nilai 8–10)", min: 8, max: 10 },
+  { id: "mid", label: "Cukup (nilai 5–7)", min: 5, max: 7 },
+  { id: "high", label: "Baik (nilai 8–10)", min: 8, max: 10 },
 ];
 
 function numericAnswer(

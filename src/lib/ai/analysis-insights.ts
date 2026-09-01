@@ -7,7 +7,6 @@ import type {
   ResponseSubmission,
 } from "@/domain/response-analytics";
 import { generateTextCompletion } from "@/lib/ai/generate-json";
-import { SURVEY_REPORT_STYLE_GUIDE } from "@/lib/ai/survey-report-style";
 import { normalizeMarkdownReport } from "@/lib/normalize-markdown-report";
 import {
   analysisInsightsSchema,
@@ -20,18 +19,18 @@ export async function generateAnalysisInsights(input: {
   questions: QuestionInput[];
   submissions: ResponseSubmission[];
   analytics: ResponseAnalytics;
+  prompt: string;
 }): Promise<AnalysisInsights | null> {
   const context = buildAnalysisInsightsContext(input);
-  const userPrompt = `Bantu saya membaca hasil survey ini dengan sistematik dan sesuai data yg kami kumpulkan ini dan siap di presentasikan.
+
+  const userPrompt = `${input.prompt.trim()}
 
 Data survei:
-${JSON.stringify(context, null, 2)}
-
-${SURVEY_REPORT_STYLE_GUIDE}`;
+${JSON.stringify(context, null, 2)}`;
 
   const raw = await generateTextCompletion({
     systemPrompt:
-      "Anda menyusun laporan analisis survei pastoral yang siap dipresentasikan: naratif, berbasis angka, jujur tentang batasan data. Output Markdown (GFM) saja.",
+      "Ikuti instruksi pengguna. Jawab dalam Bahasa Indonesia, format Markdown (GFM). Gunakan hanya angka dari data survei; jangan mengarang.",
     userPrompt,
     maxTokens: 16000,
   });
