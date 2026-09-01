@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-01 — Perbaikan build Docker (TypeScript)
+
+- `revalidateTag` Next.js 16 wajib argumen kedua (`'max'`); Server Actions pakai `updateTag` untuk invalidasi cache form publik.
+- Perbaikan tipe `LeanResponse.meta` dan fixture `collectRespondentEmail`.
+
 ## 2026-09-01 — Cache form publik (Next.js)
 
 - `getPublicFormBySlug` memakai `unstable_cache` — load `/f/[slug]` tidak selalu hit MongoDB.

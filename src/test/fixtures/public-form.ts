@@ -46,6 +46,7 @@ export function buildPublishedForm(
     confirmationMessage: ui.defaultConfirmation,
     themeId: DEFAULT_FORM_THEME_ID,
     limitOneResponse: false,
+    collectRespondentEmail: false,
     uniqueBy: "browser",
     uniqueQuestionId: null,
     headerImage: null,

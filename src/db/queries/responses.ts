@@ -66,6 +66,9 @@ type LeanResponse = {
   _id: Types.ObjectId;
   submittedAt: Date;
   answers?: LeanAnswer[];
+  meta?: {
+    respondentEmail?: string | null;
+  };
 };
 
 function asAnswerValue(value: unknown): AnswerValue {

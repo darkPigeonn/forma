@@ -1,4 +1,4 @@
-import { revalidateTag, unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache, updateTag } from "next/cache";
 
 const CACHE_KEY_PREFIX = "public-form";
 
@@ -12,15 +12,27 @@ export type PublicFormCacheIdentity = {
   shortCode?: string | null;
 };
 
-/** Invalidate cached public form payloads for all known URL segments. */
-export function revalidatePublicFormCache(
+function forEachPublicFormCacheTag(
   identity: PublicFormCacheIdentity,
+  apply: (tag: string) => void,
 ): void {
   for (const segment of [identity.slug, identity.shortCode]) {
     if (segment?.trim()) {
-      revalidateTag(publicFormCacheTagForSlug(segment));
+      apply(publicFormCacheTagForSlug(segment));
     }
   }
+}
+
+/** Immediate expiry — use from Server Actions (read-your-own-writes). */
+export function expirePublicFormCache(identity: PublicFormCacheIdentity): void {
+  forEachPublicFormCacheTag(identity, updateTag);
+}
+
+/** Stale-while-revalidate — use from Route Handlers. */
+export function revalidatePublicFormCache(
+  identity: PublicFormCacheIdentity,
+): void {
+  forEachPublicFormCacheTag(identity, (tag) => revalidateTag(tag, "max"));
 }
 
 export function getCachedPublicFormBySlug<T>(

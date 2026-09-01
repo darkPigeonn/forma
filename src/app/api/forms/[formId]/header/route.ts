@@ -73,7 +73,7 @@ export async function POST(request: Request, context: RouteContext) {
         { status: 404 },
       );
     }
-    revalidatePublicForm(updated);
+    revalidatePublicForm(updated, { fromRouteHandler: true });
     return NextResponse.json({
       ok: true,
       headerImage: updated.headerImage,
@@ -109,6 +109,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
     );
   }
 
-  revalidatePublicForm(updated);
+  revalidatePublicForm(updated, { fromRouteHandler: true });
   return NextResponse.json({ ok: true });
 }
