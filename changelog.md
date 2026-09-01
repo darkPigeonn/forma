@@ -8,6 +8,7 @@
 - Hint pengaturan diperjelas; perbaikan UI saat error duplikat (tidak lagi dianggap “satu respons per browser”).
 - **MongoDB:** index unik lama `meta.respondentEmail` dihapus; respons lama dengan `meta.* = null` dibersihkan (menyebabkan E11000 pada submit kedua). Jalankan sekali: `npm run migrate:response-indexes` (baca `.env.local` otomatis).
 - Submit tanpa batas respons memakai kunci unik berbasis waktu untuk `respondentKey` (`open:…`) dan `uniqueKey` (`uniq:…`).
+- Perbaikan build Docker: error TS di `scripts/migrate-response-indexes.ts`; folder `scripts/` dikecualikan dari typecheck Next.js.
 
 ## 2026-09-01 — Prompt wawasan AI dari input pengguna
 

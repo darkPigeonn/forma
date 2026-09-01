@@ -35,10 +35,13 @@ function loadEnvLocal() {
 
 loadEnvLocal();
 
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error("Missing MONGODB_URI (set env or add to .env.local)");
-  process.exit(1);
+function getMongoUri(): string {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error("Missing MONGODB_URI (set env or add to .env.local)");
+    process.exit(1);
+  }
+  return uri;
 }
 
 async function dropUniqueIndex(
@@ -56,7 +59,7 @@ async function dropUniqueIndex(
 }
 
 async function main() {
-  await mongoose.connect(MONGODB_URI);
+  await mongoose.connect(getMongoUri());
   const collection = mongoose.connection.collection("responses");
 
   await dropUniqueIndex(collection, "meta.respondentEmail");
