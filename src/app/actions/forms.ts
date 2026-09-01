@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { revalidatePublicForm } from "@/lib/cache/revalidate-public-form";
 import { requireSessionUser } from "@/lib/firebase/auth";
 import {
   createFormSchema,
@@ -102,6 +103,7 @@ export async function renameFormAction(
 
   revalidatePath("/dashboard");
   revalidatePath(`/forms/${form.id}`);
+  revalidatePublicForm(form);
   return { ok: true };
 }
 
@@ -122,9 +124,7 @@ export async function updateFormMetaAction(
 
   revalidatePath("/dashboard");
   revalidatePath(`/forms/${form.id}`);
-  if (form.publicPath) {
-    revalidatePath(form.publicPath);
-  }
+  revalidatePublicForm(form);
   return { ok: true };
 }
 
@@ -160,6 +160,7 @@ export async function deleteFormAction(
   const deleted = await deleteOwnedForm(parsed.data.formId, user.uid);
   if (!deleted) return { ok: false, error: "Form not found" };
 
+  revalidatePublicForm(deleted);
   revalidatePath("/dashboard");
   return { ok: true };
 }
@@ -188,6 +189,7 @@ export async function setFormStatusAction(
 
   revalidatePath("/dashboard");
   revalidatePath(`/forms/${result.form.id}`);
+  revalidatePublicForm(result.form);
   return { ok: true, publicPath: result.form.publicPath };
 }
 
@@ -216,5 +218,6 @@ export async function saveFormQuestionsAction(
 
   revalidatePath("/dashboard");
   revalidatePath(`/forms/${form.id}`);
+  revalidatePublicForm(form);
   return { ok: true };
 }

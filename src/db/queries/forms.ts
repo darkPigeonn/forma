@@ -20,6 +20,7 @@ import {
 import { getFormTemplate } from "@/lib/form-templates";
 import { applyUniqueQuestion } from "@/domain/unique-key";
 import { isFormThemeId } from "@/lib/form-theme";
+import type { PublicFormCacheIdentity } from "@/lib/cache/public-form";
 import {
   fromPersistedQuestionOptions,
   toPersistedQuestionOptions,
@@ -471,9 +472,15 @@ export async function duplicateOwnedForm(
 export async function deleteOwnedForm(
   formId: string,
   ownerId: string,
-): Promise<boolean> {
+): Promise<PublicFormCacheIdentity | null> {
   const form = await getOwnedFormDocument(formId, ownerId);
-  if (!form) return false;
+  if (!form) return null;
+
+  const identity: PublicFormCacheIdentity = {
+    id: String(form._id),
+    slug: form.slug ?? null,
+    shortCode: form.shortCode ?? null,
+  };
 
   const headerPath = form.headerImage?.path;
   if (headerPath && isFormHeaderPath(headerPath, formId)) {
@@ -484,7 +491,7 @@ export async function deleteOwnedForm(
   await FormCollaborator.deleteMany({ formId: form._id });
   await Response.deleteMany({ formId: form._id });
   await form.deleteOne();
-  return true;
+  return identity;
 }
 
 export type StatusChangeResult =

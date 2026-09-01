@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-01 — Cache form publik (Next.js)
+
+- `getPublicFormBySlug` memakai `unstable_cache` — load `/f/[slug]` tidak selalu hit MongoDB.
+- Cache di-invalidate otomatis saat form diubah: meta, pertanyaan, status, header, hapus form.
+
 ## 2026-09-01 — Email responden tanpa login (deteksi browser)
 
 - Kumpulkan email Google: tidak ada halaman login — deteksi otomatis dari sesi Firebase di browser + Google One Tap (Chrome).

@@ -19,6 +19,7 @@ import {
   resolveFormHeaderImage,
   type FormHeaderImageMeta,
 } from "@/lib/storage/form-header";
+import { getCachedPublicFormBySlug } from "@/lib/cache/public-form";
 
 export type { FormHeaderImageMeta };
 
@@ -88,8 +89,8 @@ function serializeSections(
   }));
 }
 
-/** Load a form by public slug or short code. Draft/missing → null. Closed still returned for messaging. */
-export async function getPublicFormBySlug(
+/** Load a form by public slug or short code (uncached — prefer getPublicFormBySlug). */
+export async function fetchPublicFormBySlug(
   slug: string,
 ): Promise<PublicFormView | null> {
   await connectDb();
@@ -141,4 +142,11 @@ export async function getPublicFormBySlug(
     questions: structure.questions,
     sections: structure.sections,
   };
+}
+
+/** Cached public form for respondents (invalidated when the form changes). */
+export async function getPublicFormBySlug(
+  slug: string,
+): Promise<PublicFormView | null> {
+  return getCachedPublicFormBySlug(slug, () => fetchPublicFormBySlug(slug));
 }

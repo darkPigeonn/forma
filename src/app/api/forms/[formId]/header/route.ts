@@ -4,6 +4,7 @@ import {
   setOwnedFormHeaderImage,
 } from "@/db/queries/forms";
 import { getEditableForm } from "@/db/queries/form-access";
+import { revalidatePublicForm } from "@/lib/cache/revalidate-public-form";
 import { getSessionUser } from "@/lib/firebase/auth";
 import { ui } from "@/lib/ui-id";
 
@@ -72,6 +73,7 @@ export async function POST(request: Request, context: RouteContext) {
         { status: 404 },
       );
     }
+    revalidatePublicForm(updated);
     return NextResponse.json({
       ok: true,
       headerImage: updated.headerImage,
@@ -107,5 +109,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
     );
   }
 
+  revalidatePublicForm(updated);
   return NextResponse.json({ ok: true });
 }
