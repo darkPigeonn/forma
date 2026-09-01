@@ -1,5 +1,78 @@
 # Changelog
 
+## 2026-09-01 — Kartu Wawasan AI full width
+
+- Panel dan isi laporan AI memakai lebar penuh; tabel memanfaatkan ruang horizontal.
+
+## 2026-09-01 — Format laporan AI mengikuti contoh PDF presentasi
+
+- Prompt mengikuti struktur laporan 10 bagian (gambaran umum, distribusi, silang kelompok, harapan, temuan, arah pastoral, catatan metodologis).
+- Laporan penuh ditampilkan di panel Wawasan AI; grafik tetap sebagai lampiran visual.
+
+## 2026-09-01 — Wawasan AI: rangkuman per pertanyaan
+
+- AI **merangkum** respons tiap pertanyaan (bukan kesimpulan/rekomendasi umum).
+- Struktur laporan: gambaran umum + `## Pertanyaan N` untuk setiap pertanyaan.
+- Rangkuman per pertanyaan ditampilkan di kartu grafik; panel atas menampilkan gambaran umum.
+
+## 2026-09-01 — Wawasan AI: paragraf naratif, bukan per kata
+
+- Prompt menekankan kalimat utuh dan paragraf mengalir; data `topWords` tidak lagi dikirim ke AI.
+- Tampilan laporan: lebar baca ~70 karakter, line-height lebih longgar.
+
+## 2026-09-01 — Prompt wawasan AI disederhanakan
+
+- Instruksi utama: baca hasil survei secara sistematik sesuai data terkumpul, siap dipresentasikan.
+
+## 2026-09-01 — Perbaikan Failed to fetch wawasan AI
+
+- Memuat wawasan tersimpan tidak lagi mengambil seluruh respons (757+); hanya hitung + timestamp terakhir.
+- Server action AI: batas waktu 120 detik; error jaringan ditangkap di UI, bukan error boundary.
+
+## 2026-09-01 — Laporan AI dirender sebagai Markdown
+
+- Output AI diminta dalam format **Markdown (GFM)**; tampilan memakai `react-markdown` + `remark-gfm` (heading, paragraf, tabel, daftar).
+- Parser custom diganti; laporan lama tetap tampil (heading plain text tetap terbaca sebagai paragraf).
+
+## 2026-09-01 — Tampilan laporan AI: narasi + tabel
+
+- Laporan AI di-parse dan ditampilkan dengan judul bagian, paragraf, daftar, serta **tabel HTML** yang bisa di-scroll di mobile.
+- Prompt AI diminta memakai format tabel markdown pipe agar tabel ter-render rapi.
+
+## 2026-09-01 — Format laporan wawasan AI naratif
+
+- Output AI berubah dari JSON ringkas menjadi **laporan naratif** (10 bagian: gambaran umum, distribusi, silang kelompok partisipasi, harapan, temuan, arah pastoral, catatan metodologis).
+- Konteks AI diperkaya: rentang tanggal, cakupan jawaban per pertanyaan, analisis silang skala vs pilihan.
+- UI menampilkan laporan penuh; grafik per pertanyaan tetap sebagai visualisasi pendukung.
+- Cache format lama otomatis dikonversi ke laporan teks.
+
+
+- Maks. **3 kali buat ulang** per snapshot data respons; tombol hilang setelah kuota habis.
+- Respons baru mereset kuota.
+
+## 2026-09-01 — Prompt wawasan AI disederhanakan
+
+- Instruksi utama: baca hasil survei secara sistematik sesuai data terkumpul.
+
+## 2026-09-01 — Perbaikan hydration word cloud
+
+- Word cloud hanya di-render di client untuk menghindari mismatch posisi spiral SSR vs browser.
+
+## 2026-09-01 — Wawasan AI tersimpan otomatis
+
+- Wawasan AI yang sudah pernah dibuat dimuat dari database saat tab dibuka; tombol **Buat wawasan AI** hanya muncul jika belum ada.
+- Setelah ada respons baru, cache lama tidak dipakai — tombol generate muncul lagi.
+
+## 2026-09-01 — Wawasan AI on-demand
+
+- Analisa AI hanya dijalankan setelah klik **Buat wawasan AI**, bukan otomatis saat tab dibuka.
+
+## 2026-09-01 — Wawasan AI di tab Analisa
+
+- Tab **Analisa & wawasan** menghasilkan ringkasan, temuan, rekomendasi, dan narasi per pertanyaan via AI.
+- Cache MongoDB per formulir; invalidasi otomatis saat ada respons baru.
+- Env: `OPENAI_API_KEY` atau `GEMINI_API_KEY` (opsional `OPENAI_MODEL` / `GEMINI_MODEL`).
+
 ## 2026-09-01 — Word cloud analisa respons
 
 - Tata letak spiral, warna bervariasi, kata teratas lebih besar (Fraunces), animasi masuk & tooltip frekuensi saat hover.

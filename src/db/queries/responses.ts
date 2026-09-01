@@ -224,6 +224,41 @@ async function loadAccessibleResponses(
   return { form, docs };
 }
 
+export type FormResponseFingerprint = {
+  total: number;
+  lastSubmittedAt: string | null;
+};
+
+/** Lightweight count + latest timestamp — for AI cache lookup without loading all responses. */
+export async function getAccessibleFormResponseFingerprint(
+  formId: string,
+  userId: string,
+  email: string,
+): Promise<FormResponseFingerprint | null> {
+  const form = await getEditableForm(formId, userId, email);
+  if (!form) return null;
+
+  await connectDb();
+  const formObjectId = form._id;
+
+  const [total, latest] = await Promise.all([
+    Response.countDocuments({ formId: formObjectId }),
+    Response.findOne({ formId: formObjectId })
+      .sort({ submittedAt: -1 })
+      .select({ submittedAt: 1 })
+      .lean() as Promise<{ submittedAt: Date } | null>,
+  ]);
+
+  if (total === 0) return null;
+
+  return {
+    total,
+    lastSubmittedAt: latest
+      ? new Date(latest.submittedAt).toISOString()
+      : null,
+  };
+}
+
 function questionMap(questions: QuestionInput[]) {
   return new Map(questions.map((q) => [q.id, q]));
 }

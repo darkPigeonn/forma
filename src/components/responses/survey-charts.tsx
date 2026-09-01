@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { ChoiceQuestionSummary } from "@/domain/responses";
 
 const CHART_COLORS = [
@@ -33,14 +34,16 @@ function hashWord(word: string): number {
   return Math.abs(hash);
 }
 
-function spiralPosition(index: number): { x: number; y: number } {
-  if (index === 0) return { x: 50, y: 50 };
+function spiralPosition(index: number): { x: string; y: string } {
+  if (index === 0) return { x: "50%", y: "50%" };
   const goldenAngle = 2.399963229728653;
   const angle = index * goldenAngle;
   const radius = 12 + Math.sqrt(index) * 10;
+  const x = 50 + radius * Math.cos(angle);
+  const y = 50 + radius * Math.sin(angle);
   return {
-    x: 50 + radius * Math.cos(angle),
-    y: 50 + radius * Math.sin(angle),
+    x: `${x.toFixed(4)}%`,
+    y: `${y.toFixed(4)}%`,
   };
 }
 
@@ -184,10 +187,27 @@ type WordCloudProps = {
 };
 
 export function SurveyWordCloud({ words }: WordCloudProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!words.length) return null;
 
   const sorted = [...words].sort((a, b) => b.count - a.count);
   const max = Math.max(...sorted.map((w) => w.count), 1);
+
+  if (!mounted) {
+    return (
+      <div
+        className="relative min-h-[13rem] overflow-hidden rounded-2xl border border-border/80 sm:min-h-[15rem]"
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 animate-pulse bg-border/20" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -227,8 +247,8 @@ export function SurveyWordCloud({ words }: WordCloudProps) {
               key={item.word}
               className="motion-word-pop group absolute max-w-[42%] -translate-x-1/2 -translate-y-1/2 cursor-default select-none text-center leading-tight"
               style={{
-                left: `${x}%`,
-                top: `${y}%`,
+                left: x,
+                top: y,
                 zIndex: Math.round(ratio * 10) + (isHero ? 10 : 0),
                 animationDelay: `${index * 45}ms`,
               }}
@@ -241,7 +261,7 @@ export function SurveyWordCloud({ words }: WordCloudProps) {
                     : "font-[family-name:var(--font-source-sans)]"
                 }`}
                 style={{
-                  fontSize: `${fontSize}rem`,
+                  fontSize: `${fontSize.toFixed(3)}rem`,
                   fontWeight: weight,
                   color,
                   transform: `rotate(${rotation}deg)`,

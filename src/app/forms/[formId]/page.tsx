@@ -6,6 +6,8 @@ import { requireSessionUser } from "@/lib/firebase/auth";
 import { getSiteOrigin } from "@/lib/site-origin";
 import { ui } from "@/lib/ui-id";
 
+export const maxDuration = 120;
+
 type FormPageProps = {
   params: Promise<{ formId: string }>;
 };

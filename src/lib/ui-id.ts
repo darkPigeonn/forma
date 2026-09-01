@@ -453,7 +453,31 @@ export const ui = {
   noMatchingResponses: "Tidak ada jawaban yang cocok dengan filter.",
   answerCol: "Jawaban",
   analysisInsightsSubtitle: "Ringkasan survei dan wawasan dari respons terkumpul",
-  analysisPerQuestionSubtitle: "Analisa per pertanyaan dari seluruh respons",
+  analysisPerQuestionSubtitle: "Visualisasi data per pertanyaan",
+  analysisAiTitle: "Wawasan AI",
+  analysisAiSubtitle:
+    "Laporan analisis siap presentasi — gambaran umum, tabel, silang data, temuan, dan arah pastoral",
+  analysisAiPerQuestionSummary: "Rangkuman respons",
+  analysisAiGenerating: "AI sedang menyusun laporan analisis…",
+  analysisAiGenerate: "Buat wawasan AI",
+  analysisAiGenerateHint:
+    "Klik untuk menghasilkan laporan analisis lengkap dari respons terkumpul.",
+  analysisAiRegenerate: "Buat ulang wawasan",
+  analysisAiRegenerationsLeft: (n: number) =>
+    `Sisa ${n} kali buat ulang`,
+  analysisAiRegenerationLimit:
+    "Kuota buat ulang wawasan AI sudah habis (maks. 3 kali untuk data respons ini).",
+  analysisAiGeneratedAt: (when: string) => `Dibuat ${when}`,
+  analysisAiNotConfigured:
+    "Fitur wawasan AI belum aktif. Set OPENAI_API_KEY atau GEMINI_API_KEY di server.",
+  analysisAiFailed: "Gagal membuat wawasan AI. Coba lagi beberapa saat.",
+  analysisAiNetworkError:
+    "Koneksi ke server terputus atau waktu tunggu habis. Coba lagi.",
+  analysisAiHighlights: "Temuan utama",
+  analysisAiRecommendations: "Rekomendasi",
+  analysisAiPerQuestion: "Wawasan per pertanyaan",
+  analysisQualitativeHint:
+    "Grafik pendukung; laporan analisis lengkap ada di panel Wawasan AI di atas",
   analysisChoiceResponses: (n: number) => `${n} respons`,
   analysisDateFrom: "Dari",
   analysisDateTo: "Sampai",
@@ -467,9 +491,7 @@ export const ui = {
   analysisCsatScore: "Skor CSAT",
   analysisNoScale: "Tidak ada pertanyaan skala",
   analysisResponsesLabel: "respons",
-  analysisQualitative: "Wawasan jawaban terbuka",
-  analysisQualitativeHint:
-    "Analisis sentimen berbasis kata kunci (positif, netral, negatif) dan kata yang sering muncul",
+  analysisQualitative: "Jawaban terbuka",
   analysisNoDataInRange: "Tidak ada respons pada rentang tanggal ini.",
   sentimentPositive: "Positif",
   sentimentNeutral: "Netral",

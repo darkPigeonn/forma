@@ -5,13 +5,14 @@ import {
   buildResponseAnalytics,
   type ResponseSubmission,
 } from "@/domain/response-analytics";
-import type { TextSentiment } from "@/domain/text-sentiment";
 import type { FormDetail } from "@/db/queries/forms";
+import { AnalysisAiPanel } from "@/components/responses/analysis-ai-panel";
 import {
   SurveyBarChart,
   SurveyDonutChart,
   SurveyWordCloud,
 } from "@/components/responses/survey-charts";
+import type { AnalysisInsights } from "@/lib/validators/analysis-insights";
 import { ui } from "@/lib/ui-id";
 import type { QuestionInput } from "@/lib/validators/question";
 
@@ -27,6 +28,7 @@ export function ResponsesAnalysis({
   submissions,
 }: ResponsesAnalysisProps) {
   const [copied, setCopied] = useState(false);
+  const [aiInsights, setAiInsights] = useState<AnalysisInsights | null>(null);
 
   const analytics = useMemo(
     () => buildResponseAnalytics(questions, submissions),
@@ -56,18 +58,21 @@ export function ResponsesAnalysis({
     const lines = [
       ui.analysisShareTitle(form.title),
       "",
-      ...scales.map(
-        (scale) =>
-          `${scale.label}: ${ui.analysisAverage} ${scale.average} (${scale.answered} ${ui.analysisResponsesLabel})`,
-      ),
-      ...texts.map(
-        (text) =>
-          `${text.label}: ${text.answered} ${ui.analysisResponsesLabel} (${text.responseRate}%)`,
-      ),
-    ].filter(Boolean);
+      aiInsights?.report ?? "",
+    ];
+
+    if (!aiInsights?.report) {
+      lines.push(
+        "",
+        ...scales.map(
+          (scale) =>
+            `${scale.label}: ${ui.analysisAverage} ${scale.average} (${scale.answered} ${ui.analysisResponsesLabel})`,
+        ),
+      );
+    }
 
     try {
-      await navigator.clipboard.writeText(lines.join("\n"));
+      await navigator.clipboard.writeText(lines.filter(Boolean).join("\n"));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -86,7 +91,7 @@ export function ResponsesAnalysis({
               </h2>
               <StatusBadge status={form.status} />
             </div>
-            <p className="text-sm text-ink-muted">{ui.analysisPerQuestionSubtitle}</p>
+            <p className="text-sm text-ink-muted">{ui.analysisInsightsSubtitle}</p>
           </div>
 
           <div className="flex flex-wrap gap-2 print:hidden">
@@ -114,7 +119,10 @@ export function ResponsesAnalysis({
         </div>
       </header>
 
+      <AnalysisAiPanel formId={form.id} onInsightsChange={setAiInsights} />
+
       <div className="space-y-4">
+        <p className="text-sm text-ink-muted">{ui.analysisQualitativeHint}</p>
         {orderedQuestions.map((question, index) => {
           const scale = scaleById.get(question.id);
           if (scale) {
@@ -142,7 +150,9 @@ export function ResponsesAnalysis({
                 key={question.id}
                 index={index + 1}
                 title={question.label}
-                meta={ui.analysisChoiceResponses(choice.options.reduce((s, o) => s + o.count, 0))}
+                meta={ui.analysisChoiceResponses(
+                  choice.options.reduce((s, o) => s + o.count, 0),
+                )}
               >
                 <SurveyDonutChart summary={choice} />
               </QuestionAnalysisCard>
@@ -164,32 +174,13 @@ export function ResponsesAnalysis({
                 scrollable
               >
                 <div className="space-y-4">
-                  <SentimentSummary sentiment={text.sentiment} />
                   {text.topWords.length > 0 ? (
-                    <SurveyWordCloud words={text.topWords} />
-                  ) : null}
-                  {text.samples.length > 0 ? (
-                    <ul className="grid gap-3 lg:grid-cols-2">
-                      {text.samples.map((sample, sampleIndex) => (
-                        <li
-                          key={`${question.id}-${sampleIndex}`}
-                          className="rounded-xl border border-border/80 bg-bg-elevated p-3"
-                        >
-                          <div className="mb-2 flex items-center justify-between gap-2">
-                            <SentimentBadge sentiment={sample.sentiment} />
-                            <span
-                              className="max-w-[60%] truncate text-right text-xs font-medium text-ink"
-                              title={sample.respondentLabel}
-                            >
-                              {sample.respondentLabel}
-                            </span>
-                          </div>
-                          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-sm text-ink">
-                            {sample.text}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                        {ui.analysisQualitative}
+                      </p>
+                      <SurveyWordCloud words={text.topWords} />
+                    </div>
                   ) : (
                     <p className="text-sm italic text-ink-muted">{ui.noAnswer}</p>
                   )}
@@ -242,7 +233,7 @@ function QuestionAnalysisCard({
   return (
     <article
       className={`rounded-xl border border-border bg-bg-elevated p-4 shadow-sm shadow-black/[0.03] sm:p-5 ${
-        scrollable ? "flex max-h-[min(32rem,70vh)] flex-col" : ""
+        scrollable ? "flex max-h-[min(32rem,70vh)] flex-col" : "space-y-4"
       }`}
     >
       <div className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3">
@@ -261,59 +252,13 @@ function QuestionAnalysisCard({
       </div>
       <div
         className={
-          scrollable ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : ""
+          scrollable
+            ? "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain"
+            : "space-y-4"
         }
       >
         {children}
       </div>
     </article>
-  );
-}
-
-function SentimentSummary({
-  sentiment,
-}: {
-  sentiment: Record<TextSentiment, number>;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <SentimentBadge sentiment="positive" count={sentiment.positive} />
-      <SentimentBadge sentiment="neutral" count={sentiment.neutral} />
-      <SentimentBadge sentiment="negative" count={sentiment.negative} />
-    </div>
-  );
-}
-
-function SentimentBadge({
-  sentiment,
-  count,
-}: {
-  sentiment: TextSentiment;
-  count?: number;
-}) {
-  const config = {
-    positive: {
-      label: ui.sentimentPositive,
-      className: "bg-success/10 text-success",
-    },
-    neutral: {
-      label: ui.sentimentNeutral,
-      className: "bg-border text-ink-muted",
-    },
-    negative: {
-      label: ui.sentimentNegative,
-      className: "bg-danger/10 text-danger",
-    },
-  }[sentiment];
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}
-    >
-      {config.label}
-      {typeof count === "number" ? (
-        <span className="tabular-nums">({count})</span>
-      ) : null}
-    </span>
   );
 }
