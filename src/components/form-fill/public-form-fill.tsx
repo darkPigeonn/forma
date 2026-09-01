@@ -311,12 +311,14 @@ export function PublicFormFill({
       }
 
       if (data.alreadySubmitted) {
-        if (form.limitOneResponse) {
-          try {
-            window.localStorage.setItem(localSubmittedKey(form.id), "1");
-          } catch {
-            // ignore
-          }
+        if (!form.limitOneResponse) {
+          setFormError(data.error ?? ui.couldNotSubmit);
+          return;
+        }
+        try {
+          window.localStorage.setItem(localSubmittedKey(form.id), "1");
+        } catch {
+          // ignore
         }
         setRepeatVisit(true);
         setDone(true);

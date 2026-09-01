@@ -39,10 +39,7 @@ responseSchema.index(
   { formId: 1, "meta.uniqueKey": 1 },
   { unique: true, sparse: true },
 );
-responseSchema.index(
-  { formId: 1, "meta.respondentEmail": 1 },
-  { unique: true, sparse: true },
-);
+responseSchema.index({ formId: 1, "meta.respondentEmail": 1 }, { sparse: true });
 
 export type ResponseDocument = InferSchemaType<typeof responseSchema> & {
   _id: Types.ObjectId;

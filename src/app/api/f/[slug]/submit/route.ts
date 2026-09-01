@@ -219,19 +219,29 @@ export async function POST(request: NextRequest, context: RouteContext) {
       userAgent: request.headers.get("user-agent") ?? undefined,
       ipHash: hashIp(ip),
       respondentKey,
-      uniqueKey: uniqueResult.key ?? undefined,
+      uniqueKey:
+        form.limitOneResponse && uniqueResult.key
+          ? uniqueResult.key
+          : undefined,
       respondentEmail,
       respondentUid,
     });
   } catch (error) {
     if (isDuplicateKeyError(error)) {
+      if (form.limitOneResponse) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: ui.alreadySubmittedBody,
+            alreadySubmitted: true,
+          },
+          { status: 409 },
+        );
+      }
+      console.error("submit duplicate key with limit disabled", error);
       return NextResponse.json(
-        {
-          ok: false,
-          error: ui.alreadySubmittedBody,
-          alreadySubmitted: true,
-        },
-        { status: 409 },
+        { ok: false, error: ui.couldNotSaveResponse },
+        { status: 500 },
       );
     }
     console.error("submit failed", error);

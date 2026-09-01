@@ -20,6 +20,7 @@
     "docker:logs": "docker compose logs -f survei",
     "seed": "npx tsx scripts/seed.ts",
     "seed:lingkungan": "npx tsx scripts/seed-lingkungan-survey.ts",
+    "migrate:response-indexes": "npx tsx scripts/migrate-response-indexes.ts",
     "load:submit": "npx tsx scripts/load-submit.ts",
     "generate:icons": "npx tsx scripts/generate-brand-icons.ts"
   },

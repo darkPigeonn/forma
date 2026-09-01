@@ -6,6 +6,7 @@
 - **Kumpulkan alamat email (Google)** tanpa batas respons: email tetap dicatat, perangkat/akun yang sama boleh mengirim lagi.
 - Halaman publik tidak lagi menampilkan “sudah mengirim” hanya karena email Google pernah terdeteksi saat batas respons mati.
 - Hint pengaturan diperjelas; perbaikan UI saat error duplikat (tidak lagi dianggap “satu respons per browser”).
+- **MongoDB:** index unik lama `meta.respondentEmail` dihapus (penyebab submit kedua gagal meski batas mati). Jalankan sekali: `npm run migrate:response-indexes`.
 
 ## 2026-09-01 — Prompt wawasan AI dari input pengguna
 
