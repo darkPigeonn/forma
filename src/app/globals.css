@@ -104,10 +104,26 @@ body {
   animation: forma-fade-in 0.7s ease-out 0.2s both;
 }
 
+@keyframes forma-word-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.motion-word-pop {
+  animation: forma-word-pop 0.55s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-fade-up,
   .motion-fade-up-delay,
-  .motion-fade-in {
+  .motion-fade-in,
+  .motion-word-pop {
     animation: none;
   }
 }

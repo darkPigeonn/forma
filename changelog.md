@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-01 — Word cloud analisa respons
+
+- Tata letak spiral, warna bervariasi, kata teratas lebih besar (Fraunces), animasi masuk & tooltip frekuensi saat hover.
+
+## 2026-09-01 — Scroll semua respons per pertanyaan
+
+- Daftar per pertanyaan: hapus paginasi; semua jawaban (setelah filter) tampil dalam kartu yang bisa di-scroll.
+
+## 2026-09-01 — Filter daftar respons per pertanyaan
+
+- Dropdown pilih pertanyaan (`?q=`) + pencarian & filter jawaban di tiap kartu pertanyaan.
+
+## 2026-09-01 — Tab URL, label responden teks, scroll kartu
+
+- Tab editor (`?tab=responses`, `?tab=responses&view=list&list=individual`) tetap setelah refresh.
+- Sampel jawaban teks di analisa menampilkan nama/email responden, bukan waktu.
+- Kartu pertanyaan (analisa & daftar per pertanyaan) bisa di-scroll saat konten panjang.
+
 ## 2026-09-01 — UX rentang di mobile
 
 - Pertanyaan rentang di layar kecil memakai slider dengan thumb 44px dan angka terpilih besar.

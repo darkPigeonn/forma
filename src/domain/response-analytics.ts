@@ -52,7 +52,7 @@ export type NumberQuestionStats = {
 
 export type TextQuestionSample = {
   text: string;
-  submittedAt: string;
+  respondentLabel: string;
   sentiment: TextSentiment;
 };
 
@@ -229,7 +229,11 @@ function buildTextStats(
     const tone = analyzeSentiment(display);
     sentiment[tone] += 1;
     if (samples.length < 8) {
-      samples.push({ text: display, submittedAt: response.submittedAt, sentiment: tone });
+      samples.push({
+        text: display,
+        respondentLabel: response.respondentLabel,
+        sentiment: tone,
+      });
     }
   }
 

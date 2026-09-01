@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getResponseDetailAction } from "@/app/actions/responses";
 import { ResponsesAnalysis } from "@/components/responses/responses-analysis";
 import { ResponsesByIndividual } from "@/components/responses/responses-by-individual";
@@ -10,6 +11,14 @@ import type {
   FormResponsesBundle,
   ResponseDetail,
 } from "@/db/queries/responses";
+import {
+  buildWorkspaceQuery,
+  parseListMode,
+  parseQuestionFilter,
+  parseResponsesView,
+  type ListMode,
+  type ResponsesView,
+} from "@/lib/form-workspace-url";
 import { ui } from "@/lib/ui-id";
 
 type ResponsesPanelProps = {
@@ -17,14 +26,14 @@ type ResponsesPanelProps = {
   bundle: FormResponsesBundle;
 };
 
-type ResponsesView = "analysis" | "list";
-type ListMode = "question" | "individual";
-
 export function ResponsesPanel({ form, bundle }: ResponsesPanelProps) {
-  const [view, setView] = useState<ResponsesView>("analysis");
-  const [listMode, setListMode] = useState<ListMode>("question");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const view = parseResponsesView(searchParams.get("view"));
+  const listMode = parseListMode(searchParams.get("list"));
   const [detailReturnMode, setDetailReturnMode] =
-    useState<ListMode>("question");
+    useState<ListMode>(listMode);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ResponseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +48,25 @@ export function ResponsesPanel({ form, bundle }: ResponsesPanelProps) {
     { id: "question", label: ui.tabResponseByQuestion },
     { id: "individual", label: ui.tabResponseByIndividual },
   ];
+
+  function replaceResponsesUrl(
+    responsesView: ResponsesView,
+    nextListMode: ListMode = listMode,
+    questionId?: string | null,
+  ) {
+    const href = `${pathname}${buildWorkspaceQuery(searchParams, {
+      tab: "responses",
+      responsesView,
+      listMode: nextListMode,
+      questionId:
+        questionId !== undefined
+          ? questionId
+          : nextListMode === "question"
+            ? parseQuestionFilter(searchParams.get("q"))
+            : null,
+    })}`;
+    router.replace(href, { scroll: false });
+  }
 
   function openDetail(responseId: string, returnMode: ListMode = listMode) {
     setDetailReturnMode(returnMode);
@@ -59,7 +87,7 @@ export function ResponsesPanel({ form, bundle }: ResponsesPanelProps) {
   }
 
   function closeDetail() {
-    setListMode(detailReturnMode);
+    replaceResponsesUrl("list", detailReturnMode);
     setSelectedId(null);
     setDetail(null);
     setError(null);
@@ -112,8 +140,16 @@ export function ResponsesPanel({ form, bundle }: ResponsesPanelProps) {
               role="tab"
               aria-selected={selected}
               onClick={() => {
-                setView(tab.id);
-                if (tab.id !== "list") closeDetail();
+                replaceResponsesUrl(
+                  tab.id,
+                  listMode,
+                  tab.id === "list" ? undefined : null,
+                );
+                if (tab.id !== "list") {
+                  setSelectedId(null);
+                  setDetail(null);
+                  setError(null);
+                }
               }}
               className={`min-h-11 border-b-2 px-4 text-sm font-medium transition ${
                 selected
@@ -153,7 +189,7 @@ export function ResponsesPanel({ form, bundle }: ResponsesPanelProps) {
                     type="button"
                     role="tab"
                     aria-selected={selected}
-                    onClick={() => setListMode(tab.id)}
+                    onClick={() => replaceResponsesUrl("list", tab.id, null)}
                     className={`min-h-10 rounded-lg px-4 text-sm font-medium transition ${
                       selected
                         ? "bg-bg-elevated text-ink shadow-sm shadow-black/[0.04]"

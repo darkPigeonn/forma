@@ -440,7 +440,17 @@ export const ui = {
   tabResponseByQuestion: "Per pertanyaan",
   tabResponseByIndividual: "Per individu",
   responseByQuestionCount: (n: number) => `${n} jawaban`,
+  responseByQuestionFilteredCount: (shown: number, total: number) =>
+    shown === total
+      ? `${total} jawaban`
+      : `${shown} dari ${total} jawaban`,
   responseByQuestionTable: (label: string) => `Jawaban untuk ${label}`,
+  filterByQuestion: "Filter pertanyaan",
+  allQuestions: "Semua pertanyaan",
+  searchInQuestion: "Cari responden atau jawaban…",
+  filterByAnswer: "Filter jawaban",
+  allAnswers: "Semua jawaban",
+  noMatchingResponses: "Tidak ada jawaban yang cocok dengan filter.",
   answerCol: "Jawaban",
   analysisInsightsSubtitle: "Ringkasan survei dan wawasan dari respons terkumpul",
   analysisPerQuestionSubtitle: "Analisa per pertanyaan dari seluruh respons",

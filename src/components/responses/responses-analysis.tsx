@@ -7,7 +7,6 @@ import {
 } from "@/domain/response-analytics";
 import type { TextSentiment } from "@/domain/text-sentiment";
 import type { FormDetail } from "@/db/queries/forms";
-import { formatDateTime } from "@/lib/format-date";
 import {
   SurveyBarChart,
   SurveyDonutChart,
@@ -162,6 +161,7 @@ export function ResponsesAnalysis({
                   text.skipped,
                   text.responseRate,
                 )}
+                scrollable
               >
                 <div className="space-y-4">
                   <SentimentSummary sentiment={text.sentiment} />
@@ -177,14 +177,14 @@ export function ResponsesAnalysis({
                         >
                           <div className="mb-2 flex items-center justify-between gap-2">
                             <SentimentBadge sentiment={sample.sentiment} />
-                            <time
-                              dateTime={sample.submittedAt}
-                              className="text-xs text-ink-muted"
+                            <span
+                              className="max-w-[60%] truncate text-right text-xs font-medium text-ink"
+                              title={sample.respondentLabel}
                             >
-                              {formatDateTime(sample.submittedAt)}
-                            </time>
+                              {sample.respondentLabel}
+                            </span>
                           </div>
-                          <p className="whitespace-pre-wrap text-sm text-ink">
+                          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-sm text-ink">
                             {sample.text}
                           </p>
                         </li>
@@ -229,17 +229,23 @@ function QuestionAnalysisCard({
   title,
   meta,
   badge,
+  scrollable = false,
   children,
 }: {
   index: number;
   title: string;
   meta: string;
   badge?: string;
+  scrollable?: boolean;
   children: ReactNode;
 }) {
   return (
-    <article className="rounded-xl border border-border bg-bg-elevated p-4 shadow-sm shadow-black/[0.03] sm:p-5">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <article
+      className={`rounded-xl border border-border bg-bg-elevated p-4 shadow-sm shadow-black/[0.03] sm:p-5 ${
+        scrollable ? "flex max-h-[min(32rem,70vh)] flex-col" : ""
+      }`}
+    >
+      <div className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
             {ui.questionN(index)}
@@ -253,7 +259,13 @@ function QuestionAnalysisCard({
           </span>
         ) : null}
       </div>
-      {children}
+      <div
+        className={
+          scrollable ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : ""
+        }
+      >
+        {children}
+      </div>
     </article>
   );
 }

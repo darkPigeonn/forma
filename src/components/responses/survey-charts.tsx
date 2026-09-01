@@ -13,6 +13,37 @@ const CHART_COLORS = [
   "#92400e",
 ];
 
+const WORD_CLOUD_COLORS = [
+  "#0f6e56",
+  "#0b5a46",
+  "#0e7490",
+  "#155e75",
+  "#3f6212",
+  "#1b7a4e",
+  "#b45309",
+  "#57534e",
+];
+
+function hashWord(word: string): number {
+  let hash = 0;
+  for (let i = 0; i < word.length; i += 1) {
+    hash = (hash << 5) - hash + word.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function spiralPosition(index: number): { x: number; y: number } {
+  if (index === 0) return { x: 50, y: 50 };
+  const goldenAngle = 2.399963229728653;
+  const angle = index * goldenAngle;
+  const radius = 12 + Math.sqrt(index) * 10;
+  return {
+    x: 50 + radius * Math.cos(angle),
+    y: 50 + radius * Math.sin(angle),
+  };
+}
+
 type BarChartProps = {
   summary: ChoiceQuestionSummary;
   maxBarHeight?: number;
@@ -154,28 +185,91 @@ type WordCloudProps = {
 
 export function SurveyWordCloud({ words }: WordCloudProps) {
   if (!words.length) return null;
-  const max = Math.max(...words.map((w) => w.count), 1);
+
+  const sorted = [...words].sort((a, b) => b.count - a.count);
+  const max = Math.max(...sorted.map((w) => w.count), 1);
 
   return (
     <div
-      className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 rounded-xl border border-border/80 bg-bg-elevated px-4 py-6"
-      role="list"
-      aria-label="Kata kunci"
+      className="relative min-h-[13rem] overflow-hidden rounded-2xl border border-border/80 sm:min-h-[15rem]"
+      role="img"
+      aria-label="Kata kunci dari jawaban responden"
     >
-      {words.map((item) => {
-        const scale = 0.75 + (item.count / max) * 0.9;
-        return (
-          <span
-            key={item.word}
-            role="listitem"
-            className="font-medium text-accent transition-transform hover:scale-105"
-            style={{ fontSize: `${scale}rem` }}
-            title={`${item.count} kali`}
-          >
-            {item.word}
-          </span>
-        );
-      })}
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(ellipse 85% 70% at 18% 12%, rgba(15, 110, 86, 0.14), transparent 55%), radial-gradient(ellipse 70% 55% at 88% 78%, rgba(14, 116, 144, 0.1), transparent 50%), linear-gradient(165deg, var(--color-bg-elevated) 0%, color-mix(in srgb, var(--color-bg) 88%, white) 100%)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -left-8 top-6 h-28 w-28 rounded-full bg-accent/10 blur-2xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-6 right-4 h-32 w-32 rounded-full bg-[#0e7490]/10 blur-2xl"
+        aria-hidden="true"
+      />
+
+      <div className="relative mx-auto h-full min-h-[13rem] w-full max-w-2xl sm:min-h-[15rem]">
+        {sorted.map((item, index) => {
+          const ratio = item.count / max;
+          const fontSize = 0.8 + ratio * 1.65;
+          const weight = ratio > 0.66 ? 700 : ratio > 0.33 ? 600 : 500;
+          const color = WORD_CLOUD_COLORS[hashWord(item.word) % WORD_CLOUD_COLORS.length]!;
+          const rotation = ((hashWord(item.word) % 17) - 8) * (index === 0 ? 0 : 1);
+          const { x, y } = spiralPosition(index);
+          const isHero = index === 0;
+
+          return (
+            <span
+              key={item.word}
+              className="motion-word-pop group absolute max-w-[42%] -translate-x-1/2 -translate-y-1/2 cursor-default select-none text-center leading-tight"
+              style={{
+                left: `${x}%`,
+                top: `${y}%`,
+                zIndex: Math.round(ratio * 10) + (isHero ? 10 : 0),
+                animationDelay: `${index * 45}ms`,
+              }}
+              title={`${item.word}: ${item.count} kali`}
+            >
+              <span
+                className={`relative inline-block px-0.5 transition-transform duration-200 group-hover:scale-110 ${
+                  isHero
+                    ? "font-[family-name:var(--font-fraunces)] tracking-tight"
+                    : "font-[family-name:var(--font-source-sans)]"
+                }`}
+                style={{
+                  fontSize: `${fontSize}rem`,
+                  fontWeight: weight,
+                  color,
+                  transform: `rotate(${rotation}deg)`,
+                  textShadow: isHero
+                    ? "0 1px 0 rgba(255,255,255,0.85), 0 8px 24px rgba(15, 110, 86, 0.12)"
+                    : "0 1px 0 rgba(255,255,255,0.7)",
+                }}
+              >
+                {item.word}
+                <span
+                  className="pointer-events-none absolute -bottom-4 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-1.5 py-0.5 text-[10px] font-semibold text-bg-elevated opacity-0 shadow-sm transition-opacity group-hover:opacity-100 sm:block"
+                  aria-hidden="true"
+                >
+                  {item.count}×
+                </span>
+              </span>
+            </span>
+          );
+        })}
+      </div>
+
+      <ul className="sr-only">
+        {sorted.map((item) => (
+          <li key={item.word}>
+            {item.word}: {item.count}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { Suspense, useRef, useState, type KeyboardEvent } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FormBuilder } from "@/components/form-builder/form-builder";
 import { FormActionBar } from "@/components/forms/form-action-bar";
 import { FormPreviewPanel } from "@/components/forms/form-preview-panel";
@@ -8,6 +9,11 @@ import { FormSettingsPanel } from "@/components/forms/form-settings-panel";
 import { ResponsesPanel } from "@/components/responses/responses-panel";
 import type { FormDetail } from "@/db/queries/forms";
 import type { FormResponsesBundle } from "@/db/queries/responses";
+import {
+  buildWorkspaceQuery,
+  parseWorkspaceTab,
+  type WorkspaceTab,
+} from "@/lib/form-workspace-url";
 import type { QuestionInput, SectionInput } from "@/lib/validators/question";
 import { ui } from "@/lib/ui-id";
 
@@ -17,17 +23,18 @@ type FormWorkspaceProps = {
   siteOrigin: string;
 };
 
-type Tab = "questions" | "preview" | "responses" | "settings";
-
-const TABS: { id: Tab; label: string }[] = [
+const TABS: { id: WorkspaceTab; label: string }[] = [
   { id: "questions", label: ui.tabQuestions },
   { id: "preview", label: ui.tabPreview },
   { id: "responses", label: ui.tabResponses },
   { id: "settings", label: ui.tabSettings },
 ];
 
-export function FormWorkspace({ form, responses, siteOrigin }: FormWorkspaceProps) {
-  const [tab, setTab] = useState<Tab>("questions");
+function FormWorkspaceInner({ form, responses, siteOrigin }: FormWorkspaceProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = parseWorkspaceTab(searchParams.get("tab"));
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [draft, setDraft] = useState<{
     questions: QuestionInput[];
@@ -42,6 +49,11 @@ export function FormWorkspace({ form, responses, siteOrigin }: FormWorkspaceProp
       ? { ...item, label: ui.tabResponsesCount(responses.total) }
       : item,
   );
+
+  function navigateToTab(next: WorkspaceTab) {
+    const href = `${pathname}${buildWorkspaceQuery(searchParams, { tab: next })}`;
+    router.replace(href, { scroll: false });
+  }
 
   function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const index = tabs.findIndex((t) => t.id === tab);
@@ -62,7 +74,7 @@ export function FormWorkspace({ form, responses, siteOrigin }: FormWorkspaceProp
 
     event.preventDefault();
     const nextTab = tabs[next]!;
-    setTab(nextTab.id);
+    navigateToTab(nextTab.id);
     tabRefs.current[next]?.focus();
   }
 
@@ -90,7 +102,7 @@ export function FormWorkspace({ form, responses, siteOrigin }: FormWorkspaceProp
               aria-selected={selected}
               aria-controls={`panel-${item.id}`}
               tabIndex={selected ? 0 : -1}
-              onClick={() => setTab(item.id)}
+              onClick={() => navigateToTab(item.id)}
               className={`min-h-11 border-b-2 px-4 text-sm font-medium transition ${
                 selected
                   ? "border-accent text-ink"
@@ -157,5 +169,30 @@ export function FormWorkspace({ form, responses, siteOrigin }: FormWorkspaceProp
         {tab === "settings" ? <FormSettingsPanel form={form} /> : null}
       </div>
     </div>
+  );
+}
+
+function FormWorkspaceFallback() {
+  return (
+    <div className="-mt-8 space-y-4" aria-busy="true" aria-live="polite">
+      <div className="h-14 animate-pulse rounded-xl border border-border bg-bg-elevated" />
+      <div className="flex gap-2 border-b border-border pb-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-11 w-24 animate-pulse rounded-md bg-border/60"
+          />
+        ))}
+      </div>
+      <div className="min-h-[12rem] animate-pulse rounded-xl border border-border bg-bg-elevated" />
+    </div>
+  );
+}
+
+export function FormWorkspace(props: FormWorkspaceProps) {
+  return (
+    <Suspense fallback={<FormWorkspaceFallback />}>
+      <FormWorkspaceInner {...props} />
+    </Suspense>
   );
 }
