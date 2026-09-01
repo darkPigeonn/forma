@@ -352,7 +352,7 @@ export const ui = {
     "Di browser yang sama, seseorang hanya bisa mengirim sekali. Menghapus cookie atau memakai perangkat lain tetap bisa mengirim lagi.",
   collectRespondentEmail: "Kumpulkan alamat email (Google)",
   collectRespondentEmailHint:
-    "Jika responden sudah masuk Google di Chrome, email Gmail-nya terdeteksi otomatis (tanpa halaman login) dan ditampilkan di atas formulir. Tanpa deteksi, formulir tetap bisa diisi.",
+    "Jika responden sudah masuk Google di Chrome, email Gmail-nya terdeteksi otomatis (tanpa halaman login) dan ditampilkan di atas formulir. Tanpa deteksi, formulir tetap bisa diisi. Membatasi satu respons per akun Google hanya jika “Batasi 1 respons per orang” juga aktif.",
   respondentDetectingEmail: "Mendeteksi akun Google di browser…",
   respondentHideEmail: "Sembunyikan",
   respondentSignInTitle: "Masuk untuk mengisi formulir",

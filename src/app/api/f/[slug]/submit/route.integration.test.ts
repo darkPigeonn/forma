@@ -113,9 +113,10 @@ describe("POST /api/f/[slug]/submit", () => {
     expect(body.errors?.[0]?.questionId).toBe(FIXTURE_NAME_QUESTION_ID);
   });
 
-  it("returns 409 when a unique email was already used", async () => {
+  it("returns 409 when a unique email was already used and limit is enabled", async () => {
     vi.mocked(getPublicFormBySlug).mockResolvedValue(
       buildPublishedForm({
+        limitOneResponse: true,
         uniqueBy: "email",
         uniqueQuestionId: "q-email",
         questions: [
@@ -145,6 +146,38 @@ describe("POST /api/f/[slug]/submit", () => {
       ok: false,
       error: ui.uniqueAlreadyUsed,
     });
+  });
+
+  it("allows duplicate unique email when one-response limit is disabled", async () => {
+    vi.mocked(getPublicFormBySlug).mockResolvedValue(
+      buildPublishedForm({
+        limitOneResponse: false,
+        uniqueBy: "email",
+        uniqueQuestionId: "q-email",
+        questions: [
+          {
+            id: "q-email",
+            type: "email",
+            label: "Email",
+            helpText: "",
+            required: true,
+            order: 0,
+            sectionId: "section-1",
+          },
+        ],
+      }),
+    );
+    vi.mocked(hasResponseForUniqueKey).mockResolvedValue(true);
+
+    const response = await POST(
+      submitRequest({
+        answers: [{ questionId: "q-email", value: "user@example.com" }],
+      }),
+      routeContext,
+    );
+
+    expect(response.status).toBe(200);
+    expect(hasResponseForUniqueKey).not.toHaveBeenCalled();
   });
 
   it("creates a response and returns confirmation metadata", async () => {

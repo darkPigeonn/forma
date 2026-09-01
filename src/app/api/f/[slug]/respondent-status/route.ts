@@ -59,10 +59,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const alreadySubmitted = await hasResponseForRespondentEmail(
-    form.id,
-    respondent.email,
-  );
+  const alreadySubmitted =
+    form.limitOneResponse &&
+    (await hasResponseForRespondentEmail(form.id, respondent.email));
 
   return NextResponse.json({
     ok: true,

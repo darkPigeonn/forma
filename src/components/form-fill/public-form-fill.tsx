@@ -310,11 +310,13 @@ export function PublicFormFill({
         return;
       }
 
-      if (data.alreadySubmitted || res.status === 409) {
-        try {
-          window.localStorage.setItem(localSubmittedKey(form.id), "1");
-        } catch {
-          // ignore
+      if (data.alreadySubmitted) {
+        if (form.limitOneResponse) {
+          try {
+            window.localStorage.setItem(localSubmittedKey(form.id), "1");
+          } catch {
+            // ignore
+          }
         }
         setRepeatVisit(true);
         setDone(true);

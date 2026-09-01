@@ -361,6 +361,10 @@ export async function updateOwnedFormMeta(
   if (patch.themeId !== undefined) form.themeId = patch.themeId;
   if (patch.limitOneResponse !== undefined) {
     form.limitOneResponse = patch.limitOneResponse;
+    if (patch.limitOneResponse === false && patch.uniqueBy === undefined) {
+      form.uniqueBy = "browser";
+      form.uniqueQuestionId = null;
+    }
   }
   if (patch.collectRespondentEmail !== undefined) {
     form.collectRespondentEmail = patch.collectRespondentEmail;

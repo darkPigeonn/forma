@@ -120,8 +120,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const uniqueResult = uniqueKeyFromAnswers(
-    form.uniqueBy,
-    form.uniqueQuestionId,
+    form.limitOneResponse ? form.uniqueBy : "browser",
+    form.limitOneResponse ? form.uniqueQuestionId : null,
     form.questions,
     validated.answers,
   );
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       { status: 400 },
     );
   }
-  if (uniqueResult.key) {
+  if (form.limitOneResponse && uniqueResult.key) {
     if (await hasResponseForUniqueKey(form.id, uniqueResult.key)) {
       return NextResponse.json(
         {
@@ -168,7 +168,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (token) {
       const respondent = await verifyRespondentIdToken(token);
       if (respondent && isGoogleRespondent(respondent)) {
-        if (await hasResponseForRespondentEmail(form.id, respondent.email)) {
+        if (
+          form.limitOneResponse &&
+          (await hasResponseForRespondentEmail(form.id, respondent.email))
+        ) {
           return NextResponse.json(
             {
               ok: false,
