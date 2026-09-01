@@ -201,6 +201,8 @@ describe("POST /api/f/[slug]/submit", () => {
       expect.objectContaining({
         formId: FIXTURE_FORM_ID,
         answers: [{ questionId: FIXTURE_NAME_QUESTION_ID, value: "Noel" }],
+        respondentKey: expect.stringMatching(/^open:\d+:[a-f0-9]+$/),
+        uniqueKey: expect.stringMatching(/^uniq:\d+:[a-f0-9]+$/),
       }),
     );
   });

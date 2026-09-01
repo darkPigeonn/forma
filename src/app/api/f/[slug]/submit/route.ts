@@ -13,6 +13,8 @@ import {
 } from "@/lib/firebase/verify-respondent";
 import { uniqueKeyFromAnswers } from "@/domain/unique-key";
 import {
+  createOpenRespondentKey,
+  createOpenUniqueKey,
   createRespondentToken,
   hashRespondentToken,
   respondentCookieName,
@@ -190,7 +192,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   const cookieName = respondentCookieName(form.id);
   let respondentToken = request.cookies.get(cookieName)?.value;
-  let respondentKey: string | undefined;
+  let respondentKey: string;
 
   if (form.limitOneResponse) {
     if (respondentToken) {
@@ -209,7 +211,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       respondentToken = createRespondentToken();
       respondentKey = hashRespondentToken(respondentToken);
     }
+  } else {
+    respondentKey = createOpenRespondentKey();
   }
+
+  const uniqueKey =
+    form.limitOneResponse && uniqueResult.key
+      ? uniqueResult.key
+      : createOpenUniqueKey();
 
   let created: { id: string; submittedAt: string };
   try {
@@ -219,10 +228,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       userAgent: request.headers.get("user-agent") ?? undefined,
       ipHash: hashIp(ip),
       respondentKey,
-      uniqueKey:
-        form.limitOneResponse && uniqueResult.key
-          ? uniqueResult.key
-          : undefined,
+      uniqueKey,
       respondentEmail,
       respondentUid,
     });

@@ -186,17 +186,27 @@ export async function createFormResponse(input: {
 }): Promise<{ id: string; submittedAt: string }> {
   await connectDb();
 
+  const meta: {
+    userAgent?: string;
+    ipHash?: string;
+    respondentKey?: string;
+    uniqueKey?: string;
+    respondentEmail?: string;
+    respondentUid?: string;
+  } = {};
+  const userAgent = input.userAgent?.slice(0, 500);
+  if (userAgent) meta.userAgent = userAgent;
+  if (input.ipHash) meta.ipHash = input.ipHash;
+  if (input.respondentKey) meta.respondentKey = input.respondentKey;
+  if (input.uniqueKey) meta.uniqueKey = input.uniqueKey;
+  const respondentEmail = input.respondentEmail?.trim().toLowerCase();
+  if (respondentEmail) meta.respondentEmail = respondentEmail;
+  if (input.respondentUid) meta.respondentUid = input.respondentUid;
+
   const doc = await Response.create({
     formId: new Types.ObjectId(input.formId),
     submittedAt: new Date(),
-    meta: {
-      userAgent: input.userAgent?.slice(0, 500),
-      ipHash: input.ipHash,
-      respondentKey: input.respondentKey,
-      uniqueKey: input.uniqueKey,
-      respondentEmail: input.respondentEmail?.trim().toLowerCase(),
-      respondentUid: input.respondentUid,
-    },
+    meta,
     answers: input.answers.map((a) => ({
       questionId: a.questionId,
       value: a.value,
